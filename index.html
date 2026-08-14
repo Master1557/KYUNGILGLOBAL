@@ -21,8 +21,8 @@
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800">
 
-  <!-- Header -->
-  <header class="bg-slate-900 text-white px-6 py-3.5 flex justify-between items-center shadow-md sticky top-0 z-40">
+  <!-- Header (키오스크 전용 모드에서는 자동으로 숨겨짐) -->
+  <header id="main-header" class="bg-slate-900 text-white px-6 py-3.5 flex justify-between items-center shadow-md sticky top-0 z-40">
     <div class="flex items-center gap-3">
       <!-- 로고 이미지 -->
       <img src="logo.png" alt="경일글로벌 로고" class="h-8 w-auto object-contain" onerror="this.style.display='none'; document.getElementById('header-fallback-icon').style.display='flex';">
@@ -272,6 +272,10 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
   <script>
+    // 키오스크 전용 모드 체크 (?mode=kiosk)
+    const urlParams = new URLSearchParams(window.location.search);
+    const isKioskOnlyMode = urlParams.get('mode') === 'kiosk';
+
     // 2. Firebase 설정 정보
     const firebaseConfig = {
       apiKey: "AIzaSyDgXG4dVextcvKD2vwsa11Y7zXPp8rbI08",
@@ -292,16 +296,15 @@
     // 전역 변수
     let autoCloseTimer = null;
     let clientManagerMap = {};
-    let localDataMap = {}; // Firebase 데이터를 키별로 저장
+    let localDataMap = {};
 
     lucide.createIcons();
 
-    // Firebase 실시간 감지 (모든 접속자 화면에 즉시 동기화)
+    // Firebase 실시간 감지
     dashboardRef.on('value', (snapshot) => {
       const data = snapshot.val() || {};
       localDataMap = data;
 
-      // 상단 DB 상태 표시 변경
       const dbStatusEl = document.getElementById('db-status-badge');
       if(dbStatusEl) {
         dbStatusEl.className = "text-xs bg-emerald-950 text-emerald-400 px-2.5 py-1 rounded-full font-bold flex items-center gap-1 border border-emerald-800";
@@ -322,6 +325,7 @@
     // 대시보드 테이블 렌더링
     function renderDashboardTable(data) {
       const tbody = document.getElementById('table-body');
+      if (!tbody) return;
       tbody.innerHTML = '';
 
       const keys = Object.keys(data);
@@ -330,7 +334,6 @@
         return;
       }
 
-      // 최신순 정렬
       keys.reverse().forEach(key => {
         const item = data[key];
         const tr = document.createElement('tr');
@@ -402,7 +405,6 @@
       lucide.createIcons();
     }
 
-    // 대시보드 카운트 및 키오스크 순번 계산
     function recalculateDashboardCounts(data) {
       let total = 0, waiting = 0, progress = 0, completed = 0;
 
@@ -413,19 +415,21 @@
         else if (item.status === 'COMPLETED') completed++;
       });
 
-      document.getElementById('count-total').innerText = total;
-      document.getElementById('count-waiting').innerText = waiting;
-      document.getElementById('count-progress').innerText = progress;
-      document.getElementById('count-completed').innerText = completed;
-      document.getElementById('nav-badge').innerText = total;
+      const totalEl = document.getElementById('count-total');
+      if (totalEl) {
+        document.getElementById('count-total').innerText = total;
+        document.getElementById('count-waiting').innerText = waiting;
+        document.getElementById('count-progress').innerText = progress;
+        document.getElementById('count-completed').innerText = completed;
+        document.getElementById('nav-badge').innerText = total;
+      }
 
       const headerQueueEl = document.getElementById('kiosk-header-queue-count');
-      if (headerQueueEl) headerQueueEl.innerText = waiting;
+      if (headerQueueEl) headerQueueEl.innerText = waiting + 1;
 
       return waiting;
     }
 
-    // 키오스크 접수 등록 (Firebase Push)
     function handleKioskSubmit(e) {
       e.preventDefault();
 
@@ -458,15 +462,13 @@
         timestamp: firebase.database.ServerValue.TIMESTAMP
       };
 
-      // Firebase 저장
       dashboardRef.push(newItem).then(() => {
-        // 대기순번 계산 후 완료 모달
         let currentWaiting = 0;
         Object.values(localDataMap).forEach(item => {
           if (item.status === 'WAITING') currentWaiting++;
         });
 
-        document.getElementById('modal-queue-order-number').innerText = currentWaiting + 1;
+        document.getElementById('modal-queue-order-number').innerText = currentWaiting  ;
         document.getElementById('kiosk-success-modal').classList.remove('hidden');
 
         if (autoCloseTimer) clearTimeout(autoCloseTimer);
@@ -478,17 +480,14 @@
       });
     }
 
-    // Firebase 데이터 필드 개별 수정
     function updateFirebaseField(key, field, value) {
       dashboardRef.child(key).update({ [field]: value });
     }
 
-    // 상태 변경 (Firebase 반영)
     function updateDashboardStatus(key, newStatus) {
       dashboardRef.child(key).update({ status: newStatus });
     }
 
-    // 접수건 삭제 (Firebase 반영)
     function deleteDashboardRow(key) {
       if (confirm("해당 접수 건을 삭제하시겠습니까?")) {
         dashboardRef.child(key).remove();
@@ -502,11 +501,11 @@
         if (t === tabName) {
           tabEl.classList.remove('hidden');
           tabEl.classList.add('block');
-          btnEl.className = "px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition bg-blue-600 text-white shadow-sm";
+          if (btnEl) btnEl.className = "px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition bg-blue-600 text-white shadow-sm";
         } else {
           tabEl.classList.add('hidden');
           tabEl.classList.remove('block');
-          btnEl.className = "px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-700/50 transition";
+          if (btnEl) btnEl.className = "px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-700/50 transition";
         }
       });
     }
@@ -532,10 +531,15 @@
       }
       document.getElementById('kiosk-success-modal').classList.add('hidden');
       document.getElementById('kiosk-form').reset();
-      switchTab('dashboard');
+
+      // 키오스크 전용 모드면 접수 완료 후에도 계속 키오스크 화면 유지
+      if (isKioskOnlyMode) {
+        switchTab('kiosk');
+      } else {
+        switchTab('kiosk');
+      }
     }
 
-    // 사진 다중 선택 핸들러
     function handleMultiplePhotos(event, btnIndex) {
       const files = event.target.files;
       const row = event.target.closest('tr');
@@ -566,7 +570,6 @@
       return "미정";
     }
 
-    // 구글 시트 연동 (JSONP)
     function fetchSheetData(webAppUrl) {
       if (!webAppUrl) return;
 
@@ -581,7 +584,6 @@
 
       window.onSheetDataReceived = function(data) {
         if (data && data.error) {
-          alert("구글 시트 연동 오류: " + data.error);
           if (badge) {
             badge.className = "text-xs text-red-800 ml-2 bg-red-200 px-2.5 py-1 rounded-full font-bold";
             badge.innerText = "오류 발생";
@@ -600,14 +602,6 @@
       const connector = webAppUrl.includes('?') ? '&' : '?';
       script.src = `${webAppUrl}${connector}callback=onSheetDataReceived&_ts=${Date.now()}`;
       
-      script.onerror = function() {
-        alert("구글 시트 데이터를 불러오지 못했습니다.\n\n[확인 사항]\n1. URL이 올바른지 확인\n2. Apps Script 배포 시 '액세스 권한: 모든 사용자'로 설정했는지 확인");
-        if (badge) {
-          badge.className = "text-xs text-red-800 ml-2 bg-red-200 px-2.5 py-1 rounded-full font-bold";
-          badge.innerText = "연동 실패";
-        }
-      };
-
       document.body.appendChild(script);
     }
 
@@ -682,16 +676,6 @@
       lucide.createIcons();
     }
 
-    function refreshData() {
-      const savedUrl = localStorage.getItem('sheetWebAppUrl');
-      if (savedUrl) {
-        fetchSheetData(savedUrl);
-      } else {
-        alert("우측 상단 톱니바퀴(⚙️) 버튼을 눌러 구글 Apps Script 웹 앱 URL을 먼저 등록해 주세요.");
-        openSettingsModal();
-      }
-    }
-
     function formatPhoneNumber(input) {
       let val = input.value.replace(/\D/g, '');
       let formatted = '';
@@ -703,10 +687,16 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-      const savedUrl = localStorage.getItem('sheetWebAppUrl');
-      if (savedUrl) {
-        document.getElementById('sheet-url-input').value = savedUrl;
-        fetchSheetData(savedUrl);
+      // ?mode=kiosk 주소로 접속했을 때 처리
+      if (isKioskOnlyMode) {
+        document.getElementById('main-header').classList.add('hidden'); // 헤더 완전히 숨김
+        switchTab('kiosk'); // 오직 키오스크 화면만 띄움
+      } else {
+        const savedUrl = localStorage.getItem('sheetWebAppUrl');
+        if (savedUrl) {
+          document.getElementById('sheet-url-input').value = savedUrl;
+          fetchSheetData(savedUrl);
+        }
       }
     });
   </script>
