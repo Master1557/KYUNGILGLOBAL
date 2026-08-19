@@ -17,6 +17,10 @@
     .nowrap-cell {
       white-space: nowrap;
     }
+    /* ★ 수출 현황판 한눈에 보기 배율 축소 적용 */
+    .export-fit-container {
+      zoom: 0.82;
+    }
   </style>
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800">
@@ -59,7 +63,7 @@
     </div>
   </header>
 
-  <!-- TAB 1: Operator Dashboard (칸 간격 및 길이 대폭 확장) -->
+  <!-- TAB 1: Operator Dashboard -->
   <main id="tab-dashboard" class="max-w-[98%] mx-auto px-4 py-6 space-y-6 block">
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
       <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center justify-between">
@@ -111,8 +115,8 @@
     </div>
   </main>
 
-  <!-- TAB 2: Export Status Board (칸 크기 대폭 큼직하게 확장) -->
-  <main id="tab-export" class="max-w-full w-[98%] mx-auto px-4 py-6 space-y-6 hidden">
+  <!-- TAB 2: Export Status Board (배율 축소 적용으로 한눈에 다 들어옴) -->
+  <main id="tab-export" class="max-w-full w-[98%] mx-auto px-4 py-6 space-y-6 hidden export-fit-container">
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
       <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-yellow-400/20">
         <div class="flex items-center gap-2">
@@ -130,23 +134,23 @@
           <thead class="bg-yellow-400 text-slate-800 font-bold text-xs border-b border-yellow-500">
             <tr>
               <th class="py-3 px-3 text-center w-12 border-r border-yellow-500">NO.</th>
-              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[80px]">규격</th>
-              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[150px]">CNTR#</th>
-              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[140px]">SEAL NO.</th>
-              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[180px]">화 주</th>
-              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[100px]">ITEM</th>
-              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[90px]">LINE</th>
-              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[90px]">수량</th>
-              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[90px]">중량</th>
-              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[110px]">운송사</th>
-              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[110px]">선적지</th>
-              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[90px]">CLS</th>
-              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[110px]">쇼링</th>
-              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[200px]">비 고</th>
-              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[160px]">B/K NO.</th>
-              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[140px]">담당자</th>
-              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[150px]">작업 상태</th>
-              <th class="py-3 px-3 text-center min-w-[180px]">작업사진</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[75px]">규격</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[130px]">CNTR#</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[120px]">SEAL NO.</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[160px]">화 주</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[90px]">ITEM</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[80px]">LINE</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[80px]">수량</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[80px]">중량</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[100px]">운송사</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[100px]">선적지</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[80px]">CLS</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[100px]">쇼링</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[180px]">비 고</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[140px]">B/K NO.</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[130px]">담당자</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[140px]">작업 상태</th>
+              <th class="py-3 px-3 text-center min-w-[170px]">작업사진</th>
             </tr>
           </thead>
           <tbody id="export-table-body" class="divide-y divide-slate-200 font-medium text-xs">
@@ -262,7 +266,7 @@
     </div>
   </div>
 
-  <!-- 사진 목록 보기 모달창 (일괄 다운 버튼 삭제됨) -->
+  <!-- 사진 목록 보기 모달창 -->
   <div id="photo-viewer-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4 z-50">
     <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
       <div class="flex justify-between items-center border-b pb-3">
@@ -313,7 +317,6 @@
       recalculateDashboardCounts(data);
     });
 
-    // 오퍼레이터 대시보드 테이블 렌더링 (칸 길이 대폭 확장)
     function renderDashboardTable(data) {
       const tbody = document.getElementById('table-body');
       if (!tbody) return;
@@ -405,7 +408,7 @@
 
     function switchTab(tabName) {
       ['dashboard', 'export', 'kiosk'].forEach(t => {
-        document.getElementById(`tab-${t}`).className = (t === tabName) ? (t === 'dashboard' ? "max-w-[98%] mx-auto px-4 py-6 space-y-6 block" : "max-w-full w-[98%] mx-auto px-4 py-6 space-y-6 block") : "hidden";
+        document.getElementById(`tab-${t}`).className = (t === tabName) ? (t === 'dashboard' ? "max-w-[98%] mx-auto px-4 py-6 space-y-6 block" : "max-w-full w-[98%] mx-auto px-4 py-6 space-y-6 block export-fit-container") : "hidden";
         const btn = document.getElementById(`nav-${t}-btn`);
         if (btn) btn.className = (t === tabName) ? "px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition bg-blue-600 text-white shadow-sm" : "px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-700/50 transition";
       });
@@ -506,7 +509,6 @@
       inputEl.value = '';
     }
 
-    // 사진 보기 팝업 모달창 (일괄 다운로드 버튼 제거됨)
     function showPhotoModal(urls, titleText) {
       const modal = document.getElementById('photo-viewer-modal');
       const titleEl = document.getElementById('photo-modal-title');
@@ -600,7 +602,6 @@
       document.body.appendChild(script);
     }
 
-    // 수출 현황판 테이블 렌더링 (입력 칸 큼직하게 확장)
     function renderExportTable(rows) {
       const tbody = document.getElementById('export-table-body');
       if (!tbody) return;
@@ -618,13 +619,13 @@
           <td class="py-3 px-3 border-r"><input type="text" value="${row[1] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[2] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[3] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[4] || ''}" class="w-full border rounded px-2.5 py-1.5 text-xs font-bold"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[5] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[6] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[4] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[5] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[6] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[7] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[8] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[9] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[10] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[10] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[11] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[12] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[13] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs"></td>
