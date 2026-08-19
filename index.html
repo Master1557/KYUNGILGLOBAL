@@ -21,10 +21,9 @@
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800">
 
-  <!-- Header (키오스크 전용 모드에서는 자동으로 숨겨짐) -->
+  <!-- Header -->
   <header id="main-header" class="bg-slate-900 text-white px-6 py-3.5 flex justify-between items-center shadow-md sticky top-0 z-40">
     <div class="flex items-center gap-3">
-      <!-- 로고 이미지 -->
       <img src="logo.png" alt="경일글로벌 로고" class="h-8 w-auto object-contain" onerror="this.style.display='none'; document.getElementById('header-fallback-icon').style.display='flex';">
       <div id="header-fallback-icon" class="hidden bg-blue-600 text-white p-2 rounded-lg items-center justify-center">
         <i data-lucide="truck" class="w-5 h-5"></i>
@@ -32,7 +31,6 @@
       <span class="text-xl font-bold tracking-tight">경일글로벌</span>
     </div>
 
-    <!-- Navigation Tabs -->
     <div class="flex items-center gap-1.5 bg-slate-800/80 p-1.5 rounded-xl border border-slate-700/60">
       <button id="nav-dashboard-btn" onclick="switchTab('dashboard')" class="px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition bg-blue-600 text-white shadow-sm">
         <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
@@ -51,7 +49,6 @@
       </button>
     </div>
 
-    <!-- Settings & Firebase Status -->
     <div class="flex items-center gap-2">
       <span id="db-status-badge" class="text-xs bg-slate-800 text-slate-400 px-2.5 py-1 rounded-full font-bold flex items-center gap-1">
         <span class="w-2 h-2 rounded-full bg-amber-400"></span> 연결 중...
@@ -168,7 +165,6 @@
   <section id="tab-kiosk" class="max-w-2xl mx-auto px-4 py-8 hidden">
     <div class="bg-slate-900 text-slate-100 rounded-3xl shadow-2xl border border-slate-800 overflow-hidden">
       
-      <!-- Kiosk Header -->
       <div class="bg-slate-950 px-8 py-6 border-b border-slate-800 text-center">
         <div class="inline-flex items-center justify-center bg-white/10 p-3 rounded-2xl mb-3">
           <img src="logo.png" alt="경일글로벌 로고" class="h-10 w-auto object-contain" onerror="this.style.display='none'; document.getElementById('kiosk-fallback-icon').style.display='block';">
@@ -177,7 +173,6 @@
         <h1 class="text-2xl font-black text-white tracking-tight">경일글로벌 입/출고 접수 키오스크</h1>
         <p class="text-slate-400 text-sm mt-1 mb-4">기사님 접수를 위해 아래 정보를 입력해 주세요.</p>
         
-        <!-- 실시간 대기순번 표시 박스 -->
         <div class="bg-slate-900 border border-blue-500/40 rounded-2xl p-4 max-w-sm mx-auto shadow-inner">
           <p class="text-xs text-blue-400 font-bold mb-1">현재 대기순번</p>
           <p class="text-3xl font-black text-amber-400 tracking-tight"><span id="kiosk-header-queue-count">0</span><span class="text-lg text-slate-300 font-bold ml-1">번째</span></p>
@@ -267,16 +262,13 @@
     </div>
   </div>
 
-  <!-- 1. Firebase SDK 불러오기 (데이터베이스 연동 유지용) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
   <script>
-    // 키오스크 전용 모드 체크 (?mode=kiosk)
     const urlParams = new URLSearchParams(window.location.search);
     const isKioskOnlyMode = urlParams.get('mode') === 'kiosk';
 
-    // 2. Firebase 설정 정보
     const firebaseConfig = {
       apiKey: "AIzaSyDgXG4dVextcvKD2vwsa11Y7zXPp8rbI08",
       authDomain: "kiglsystem.firebaseapp.com",
@@ -288,19 +280,16 @@
       measurementId: "G-TTV99051J8"
     };
 
-    // Firebase 초기화 (실시간 대시보드 연동용)
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
     const dashboardRef = database.ref('dashboard_items');
 
-    // 전역 변수
     let autoCloseTimer = null;
     let clientManagerMap = {};
     let localDataMap = {};
 
     lucide.createIcons();
 
-    // Firebase 실시간 감지
     dashboardRef.on('value', (snapshot) => {
       const data = snapshot.val() || {};
       localDataMap = data;
@@ -315,14 +304,8 @@
       recalculateDashboardCounts(data);
     }, (error) => {
       console.error("Firebase 읽기 오류:", error);
-      const dbStatusEl = document.getElementById('db-status-badge');
-      if(dbStatusEl) {
-        dbStatusEl.className = "text-xs bg-red-950 text-red-400 px-2.5 py-1 rounded-full font-bold flex items-center gap-1 border border-red-800";
-        dbStatusEl.innerHTML = '<span class="w-2 h-2 rounded-full bg-red-500"></span> 연결 오류';
-      }
     });
 
-    // 대시보드 테이블 렌더링
     function renderDashboardTable(data) {
       const tbody = document.getElementById('table-body');
       if (!tbody) return;
@@ -398,7 +381,6 @@
             <span class="default-photo-text ${defaultTextClass} text-slate-400 text-xs">-</span>
           </td>
         `;
-
         tbody.appendChild(tr);
       });
 
@@ -407,14 +389,12 @@
 
     function recalculateDashboardCounts(data) {
       let total = 0, waiting = 0, progress = 0, completed = 0;
-
       Object.values(data).forEach(item => {
         total++;
         if (item.status === 'WAITING') waiting++;
         else if (item.status === 'IN_PROGRESS') progress++;
         else if (item.status === 'COMPLETED') completed++;
       });
-
       const totalEl = document.getElementById('count-total');
       if (totalEl) {
         document.getElementById('count-total').innerText = total;
@@ -423,23 +403,17 @@
         document.getElementById('count-completed').innerText = completed;
         document.getElementById('nav-badge').innerText = total;
       }
-
-      const headerQueueEl = document.getElementById('kiosk-header-queue-count');
-      if (headerQueueEl) headerQueueEl.innerText = waiting + 1;
-
       return waiting;
     }
 
     function handleKioskSubmit(e) {
       e.preventDefault();
-
       const workTypeInput = document.querySelector('input[name="work-type"]:checked');
       const workType = workTypeInput ? workTypeInput.value : '하차(입고)';
       const clientName = document.getElementById('client-name').value.trim();
       const carNumber = document.getElementById('car-number').value.trim();
       const phoneNumber = document.getElementById('phone-number').value.trim();
       const quantity = document.getElementById('quantity').value.trim();
-
       const matchedManager = findManagerByClient(clientName);
 
       const now = new Date();
@@ -450,61 +424,32 @@
       const timeStr = `${month}-${day} ${hours}:${minutes}`;
 
       const newItem = {
-        workType: workType,
-        timeStr: timeStr,
-        manager: matchedManager,
-        carNumber: carNumber,
-        phoneNumber: phoneNumber,
-        clientName: clientName,
-        quantity: quantity,
-        note: "키오스크 신규 접수",
-        status: "WAITING",
+        workType: workType, timeStr: timeStr, manager: matchedManager,
+        carNumber: carNumber, phoneNumber: phoneNumber, clientName: clientName,
+        quantity: quantity, note: "키오스크 신규 접수", status: "WAITING",
         timestamp: firebase.database.ServerValue.TIMESTAMP
       };
 
       dashboardRef.push(newItem).then(() => {
-        let currentWaiting = 0;
-        Object.values(localDataMap).forEach(item => {
-          if (item.status === 'WAITING') currentWaiting++;
-        });
-
-        document.getElementById('modal-queue-order-number').innerText = currentWaiting  ;
         document.getElementById('kiosk-success-modal').classList.remove('hidden');
-
         if (autoCloseTimer) clearTimeout(autoCloseTimer);
-        autoCloseTimer = setTimeout(() => {
-          closeKioskSuccessModal();
-        }, 10000);
-      }).catch(err => {
-        alert("접수 저장 실패: " + err.message);
-      });
+        autoCloseTimer = setTimeout(() => { closeKioskSuccessModal(); }, 10000);
+      }).catch(err => { alert("접수 저장 실패: " + err.message); });
     }
 
-    function updateFirebaseField(key, field, value) {
-      dashboardRef.child(key).update({ [field]: value });
-    }
-
-    function updateDashboardStatus(key, newStatus) {
-      dashboardRef.child(key).update({ status: newStatus });
-    }
-
-    function deleteDashboardRow(key) {
-      if (confirm("해당 접수 건을 삭제하시겠습니까?")) {
-        dashboardRef.child(key).remove();
-      }
-    }
+    function updateFirebaseField(key, field, value) { dashboardRef.child(key).update({ [field]: value }); }
+    function updateDashboardStatus(key, newStatus) { dashboardRef.child(key).update({ status: newStatus }); }
+    function deleteDashboardRow(key) { if (confirm("해당 접수 건을 삭제하시겠습니까?")) { dashboardRef.child(key).remove(); } }
 
     function switchTab(tabName) {
       ['dashboard', 'export', 'kiosk'].forEach(t => {
         const tabEl = document.getElementById(`tab-${t}`);
         const btnEl = document.getElementById(`nav-${t}-btn`);
         if (t === tabName) {
-          tabEl.classList.remove('hidden');
-          tabEl.classList.add('block');
+          tabEl.classList.remove('hidden'); tabEl.classList.add('block');
           if (btnEl) btnEl.className = "px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition bg-blue-600 text-white shadow-sm";
         } else {
-          tabEl.classList.add('hidden');
-          tabEl.classList.remove('block');
+          tabEl.classList.add('hidden'); tabEl.classList.remove('block');
           if (btnEl) btnEl.className = "px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-700/50 transition";
         }
       });
@@ -515,31 +460,19 @@
 
     function saveSettings() { 
       const url = document.getElementById('sheet-url-input').value.trim();
-      if (!url) {
-        alert("URL을 입력해 주세요.");
-        return;
-      }
+      if (!url) { alert("URL을 입력해 주세요."); return; }
       localStorage.setItem('sheetWebAppUrl', url);
       closeSettingsModal(); 
       fetchSheetData(url);
     }
 
     function closeKioskSuccessModal() {
-      if (autoCloseTimer) {
-        clearTimeout(autoCloseTimer);
-        autoCloseTimer = null;
-      }
+      if (autoCloseTimer) { clearTimeout(autoCloseTimer); autoCloseTimer = null; }
       document.getElementById('kiosk-success-modal').classList.add('hidden');
       document.getElementById('kiosk-form').reset();
-
-      if (isKioskOnlyMode) {
-        switchTab('kiosk');
-      } else {
-        switchTab('dashboard');
-      }
+      if (isKioskOnlyMode) { switchTab('kiosk'); } else { switchTab('dashboard'); }
     }
 
-    // 파일 데이터를 Base64 텍스트로 변환하는 함수
     function getBase64(file) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -549,10 +482,10 @@
       });
     }
 
-    // [강력 다중 업로드 개선] Array.from을 사용하여 선택한 모든 파일이 누락 없이 동시에 업로드되도록 처리
+    // [최종 묶음 저장 기능] 여러 장을 선택하면 하나로 묶어서 다운로드 링크 제공
     async function handleMultiplePhotos(event, btnIndex) {
       const inputEl = event.target;
-      const files = Array.from(inputEl.files); // 파일을 배열로 안전하게 변환
+      const files = Array.from(inputEl.files);
       if (files.length === 0) return;
 
       const row = inputEl.closest('tr');
@@ -561,31 +494,34 @@
       const webAppUrl = document.getElementById('sheet-url-input').value.trim();
       if (!webAppUrl) {
         alert("환경설정(⚙️)에서 구글 Apps Script 웹 앱 URL을 먼저 설정해주세요.");
-        inputEl.value = ''; // 초기화
+        inputEl.value = '';
         return;
       }
 
       let identifier = '사진';
       let cntrInput = row.children[2]?.querySelector('input');
       let carNoCell = row.children[4];
-      
       if (cntrInput && cntrInput.value) {
         identifier = cntrInput.value.trim();
       } else if (carNoCell && carNoCell.innerText) {
         identifier = carNoCell.innerText.trim();
       }
 
-      // 선택한 파일들을 순회하며 하나씩 병렬/연속 업로드 진행
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const fileName = `Export_${identifier}_${Date.now()}_${i + 1}_${file.name}`;
+      // 기존에 해당 버튼으로 만들어졌던 이전 묶음 상자가 있다면 제거
+      const existingBadge = previewList.querySelector(`.bundle-badge-${btnIndex}`);
+      if (existingBadge) existingBadge.remove();
 
-        const loadingBadge = document.createElement('div');
-        loadingBadge.className = "flex items-center gap-1 font-semibold text-amber-700 bg-amber-100 px-2 py-1.5 rounded border border-amber-200 mt-1";
-        loadingBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> [${i+1}/${files.length}] 업로드 중...`;
-        previewList.appendChild(loadingBadge);
+      const loadingBadge = document.createElement('div');
+      loadingBadge.className = "flex items-center gap-1 font-semibold text-amber-700 bg-amber-100 px-2.5 py-1.5 rounded border border-amber-200 mt-1 shadow-sm";
+      loadingBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> [사진 ${btnIndex}] ${files.length}장 업로드 중...`;
+      previewList.appendChild(loadingBadge);
 
-        try {
+      let uploadedUrls = [];
+
+      try {
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const fileName = `Export_${identifier}_${Date.now()}_${i + 1}_${file.name}`;
           const base64Data = await getBase64(file);
 
           const formData = new URLSearchParams();
@@ -594,53 +530,57 @@
           formData.append('mimeType', file.type);
           formData.append('data', base64Data);
 
-          const response = await fetch(webAppUrl, {
-            method: 'POST',
-            body: formData
-          });
-
+          const response = await fetch(webAppUrl, { method: 'POST', body: formData });
           const result = await response.json();
 
           if (result.status === 'success') {
-            loadingBadge.remove(); 
-
-            const badge = document.createElement('div');
-            badge.className = "mt-1";
-            const btnLabel = btnIndex === 1 ? '사진 1' : '사진 2';
-            
-            badge.innerHTML = `
-              <div class="flex items-center justify-between font-bold text-slate-700 bg-emerald-50 px-2 py-1.5 rounded-lg border border-emerald-300 shadow-sm">
-                <span class="text-emerald-700 text-[10px]">[${btnLabel}] ${i+1}장 저장됨</span>
-                <a href="${result.url}" target="_blank" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] px-2 py-1 rounded transition flex items-center gap-1">
-                  보기/다운
-                </a>
-              </div>
-            `;
-            previewList.appendChild(badge);
+            uploadedUrls.push(result.url);
           } else {
             throw new Error(result.message || '업로드 에러');
           }
-
-        } catch (error) {
-          console.error("사진 업로드 실패:", error);
-          loadingBadge.className = "flex items-center gap-1 font-semibold text-red-700 bg-red-100 px-2 py-1.5 rounded border border-red-200 mt-1 text-[11px]";
-          loadingBadge.innerHTML = `[${i+1}] 업로드 실패`;
         }
+
+        loadingBadge.remove();
+
+        // 묶음 다운로드 박스 생성 (버튼 하나로 여러 링크를 새 창으로 모두 열어줌)
+        const badge = document.createElement('div');
+        badge.className = `mt-1 bundle-badge-${btnIndex}`;
+        const btnLabel = btnIndex === 1 ? '사진 1' : '사진 2';
+
+        badge.innerHTML = `
+          <div class="flex items-center justify-between font-bold text-slate-700 bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-300 shadow-sm">
+            <span class="text-emerald-700 text-[11px]">[${btnLabel}] ${files.length}장 저장됨</span>
+            <button onclick='openAllPhotos(${JSON.stringify(uploadedUrls)})' class="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] px-2.5 py-1 rounded transition flex items-center gap-1 cursor-pointer">
+              일괄 다운
+            </button>
+          </div>
+        `;
+        previewList.appendChild(badge);
+
+      } catch (error) {
+        console.error("사진 업로드 실패:", error);
+        loadingBadge.remove();
+        alert("사진 업로드 중 문제가 발생했습니다: " + error.message);
       }
 
-      inputEl.value = ''; // 다음 업로드를 위해 입력창 초기화
+      inputEl.value = '';
+    }
+
+    // 묶여 있는 사진들을 새 창으로 한꺼번에 열어주는 함수
+    function openAllPhotos(urls) {
+      if (!urls || urls.length === 0) return;
+      urls.forEach(url => {
+        window.open(url, '_blank');
+      });
     }
 
     function findManagerByClient(clientInput) {
       if (!clientInput) return "미정";
       const cleanInput = clientInput.trim().toLowerCase();
-
       for (const [keyClient, manager] of Object.entries(clientManagerMap)) {
         if (keyClient && manager) {
           const cleanKey = keyClient.trim().toLowerCase();
-          if (cleanKey.includes(cleanInput) || cleanInput.includes(cleanKey)) {
-            return manager;
-          }
+          if (cleanKey.includes(cleanInput) || cleanInput.includes(cleanKey)) { return manager; }
         }
       }
       return "미정";
@@ -648,24 +588,16 @@
 
     function fetchSheetData(webAppUrl) {
       if (!webAppUrl) return;
-
       const badge = document.getElementById('sync-status-badge');
       if (badge) {
         badge.className = "text-xs text-blue-800 ml-2 bg-blue-200 px-2.5 py-1 rounded-full font-bold animate-pulse";
         badge.innerText = "동기화 중...";
       }
-
       const oldScript = document.getElementById('jsonp-script-loader');
       if (oldScript) oldScript.remove();
 
       window.onSheetDataReceived = function(data) {
-        if (data && data.error) {
-          if (badge) {
-            badge.className = "text-xs text-red-800 ml-2 bg-red-200 px-2.5 py-1 rounded-full font-bold";
-            badge.innerText = "오류 발생";
-          }
-          return;
-        }
+        if (data && data.error) { return; }
         renderExportTable(data || []);
         if (badge) {
           badge.className = "text-xs text-emerald-800 ml-2 bg-emerald-200 px-2.5 py-1 rounded-full font-bold";
@@ -677,15 +609,12 @@
       script.id = 'jsonp-script-loader';
       const connector = webAppUrl.includes('?') ? '&' : '?';
       script.src = `${webAppUrl}${connector}callback=onSheetDataReceived&_ts=${Date.now()}`;
-      
       document.body.appendChild(script);
     }
 
-    // Export 탭 테이블 렌더링 (다중 파일 선택 속성 multiple 포함)
     function renderExportTable(rows) {
       const tbody = document.getElementById('export-table-body');
       if (!tbody) return;
-
       tbody.innerHTML = '';
       clientManagerMap = {};
 
@@ -697,31 +626,28 @@
       rows.forEach((row, idx) => {
         const clientName = (row[4] || '').toString().trim();
         const managerName = (row[15] || '').toString().trim();
-
-        if (clientName && managerName) {
-          clientManagerMap[clientName] = managerName;
-        }
+        if (clientName && managerName) { clientManagerMap[clientName] = managerName; }
 
         const tr = document.createElement('tr');
         tr.className = "hover:bg-slate-50 transition";
 
         tr.innerHTML = `
           <td class="py-2.5 px-2 text-center bg-green-100/60 border-r border-slate-200 font-bold text-slate-800">${row[0] || (idx + 1)}</td>
-          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[1] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs outline-none focus:border-indigo-500"></td>
-          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[2] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs font-bold text-slate-800 outline-none focus:border-indigo-500"></td>
-          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[3] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs outline-none focus:border-indigo-500"></td>
-          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[4] || ''}" class="w-full border border-slate-200 rounded px-2 py-1 text-xs font-bold outline-none focus:border-indigo-500"></td>
-          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[5] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs outline-none focus:border-indigo-500"></td>
-          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[6] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs outline-none focus:border-indigo-500"></td>
-          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[7] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs font-bold outline-none focus:border-indigo-500"></td>
-          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[8] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs outline-none focus:border-indigo-500"></td>
-          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[9] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs outline-none focus:border-indigo-500"></td>
-          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[10] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs outline-none focus:border-indigo-500"></td>
-          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[11] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs outline-none focus:border-indigo-500"></td>
-          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[12] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs outline-none focus:border-indigo-500"></td>
-          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[13] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs outline-none focus:border-indigo-500"></td>
-          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[14] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs font-bold outline-none focus:border-indigo-500"></td>
-          <td class="py-2.5 px-3 border-r border-slate-200 min-w-[130px]"><input type="text" value="${row[15] || ''}" class="w-full text-center bg-slate-50 border border-slate-200 rounded px-2 py-1 text-xs font-bold outline-none focus:border-indigo-500"></td>
+          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[1] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs outline-none"></td>
+          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[2] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs font-bold text-slate-800 outline-none"></td>
+          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[3] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs outline-none"></td>
+          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[4] || ''}" class="w-full border border-slate-200 rounded px-2 py-1 text-xs font-bold outline-none"></td>
+          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[5] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs outline-none"></td>
+          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[6] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs outline-none"></td>
+          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[7] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs font-bold outline-none"></td>
+          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[8] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs outline-none"></td>
+          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[9] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs outline-none"></td>
+          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[10] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs outline-none"></td>
+          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[11] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs outline-none"></td>
+          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[12] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs outline-none"></td>
+          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[13] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs outline-none"></td>
+          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[14] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs font-bold outline-none"></td>
+          <td class="py-2.5 px-3 border-r border-slate-200 min-w-[130px]"><input type="text" value="${row[15] || ''}" class="w-full text-center bg-slate-50 border border-slate-200 rounded px-2 py-1 text-xs font-bold outline-none"></td>
           <td class="py-2.5 px-3 border-r border-slate-200 min-w-[140px]">
             <select class="export-status-select w-full border border-slate-200 bg-white text-slate-700 font-bold rounded-lg px-2.5 py-1.5 text-xs outline-none cursor-pointer">
               <option value="NONE" selected>선택 안함</option>
@@ -755,7 +681,6 @@
       lucide.createIcons();
     }
 
-    // 문서 전체 감지를 통해 새로고침 되어도 상태가 완벽하게 토글되도록 처리 (이벤트 위임)
     document.addEventListener('change', function(e) {
       if (e.target && e.target.classList.contains('export-status-select')) {
         const selectElement = e.target;
@@ -768,12 +693,10 @@
         if (selectElement.value === 'DONE' || selectElement.value === '작업완료') {
           if (photoGroup) photoGroup.classList.remove('hidden');
           if (defaultText) defaultText.classList.add('hidden');
-          
           selectElement.className = "export-status-select w-full border border-emerald-300 bg-emerald-50 text-emerald-900 font-extrabold rounded-lg px-2.5 py-1.5 text-xs outline-none cursor-pointer";
         } else {
           if (photoGroup) photoGroup.classList.add('hidden');
           if (defaultText) defaultText.classList.remove('hidden');
-          
           selectElement.className = "export-status-select w-full border border-slate-200 bg-white text-slate-700 font-bold rounded-lg px-2.5 py-1.5 text-xs outline-none cursor-pointer";
         }
       }
@@ -790,10 +713,9 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-      // ?mode=kiosk 주소로 접속했을 때 처리
       if (isKioskOnlyMode) {
-        document.getElementById('main-header').classList.add('hidden'); // 헤더 완전히 숨김
-        switchTab('kiosk'); // 오직 키오스크 화면만 띄움
+        document.getElementById('main-header').classList.add('hidden');
+        switchTab('kiosk');
       } else {
         const savedUrl = localStorage.getItem('sheetWebAppUrl');
         if (savedUrl) {
