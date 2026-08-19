@@ -267,7 +267,7 @@
     </div>
   </div>
 
-  <!-- 1. Firebase SDK 불러오기 -->
+  <!-- 1. Firebase SDK 불러오기 (데이터베이스 연동 유지용) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
@@ -288,7 +288,7 @@
       measurementId: "G-TTV99051J8"
     };
 
-    // Firebase 초기화
+    // Firebase 초기화 (실시간 대시보드 연동용)
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
     const dashboardRef = database.ref('dashboard_items');
@@ -386,11 +386,11 @@
               <div class="flex items-center gap-1.5">
                 <label class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white text-xs px-2.5 py-1 rounded-md font-medium flex items-center gap-1">
                   <i data-lucide="camera" class="w-3.5 h-3.5"></i> 사진 1
-                  <input type="file" accept="image/*" multiple class="hidden" onchange="handleMultiplePhotos(event, 1)">
+                  <input type="file" accept="image/*" class="hidden" onchange="handleMultiplePhotos(event, 1)">
                 </label>
                 <label class="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-2.5 py-1 rounded-md font-medium flex items-center gap-1">
                   <i data-lucide="camera" class="w-3.5 h-3.5"></i> 사진 2
-                  <input type="file" accept="image/*" multiple class="hidden" onchange="handleMultiplePhotos(event, 2)">
+                  <input type="file" accept="image/*" class="hidden" onchange="handleMultiplePhotos(event, 2)">
                 </label>
               </div>
               <div class="photo-preview-list text-[11px] space-y-0.5"></div>
@@ -532,27 +532,102 @@
       document.getElementById('kiosk-success-modal').classList.add('hidden');
       document.getElementById('kiosk-form').reset();
 
-      // 키오스크 전용 모드면 접수 완료 후에도 계속 키오스크 화면 유지
       if (isKioskOnlyMode) {
         switchTab('kiosk');
       } else {
-        switchTab('kiosk');
+        switchTab('dashboard');
       }
     }
 
-    function handleMultiplePhotos(event, btnIndex) {
+    // 파일 데이터를 Base64 텍스트로 변환하는 함수
+    function getBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = error => reject(error);
+      });
+    }
+
+    // [수정됨] 구글 드라이브(Apps Script) 업로드 처리 함수
+    async function handleMultiplePhotos(event, btnIndex) {
       const files = event.target.files;
+      if (files.length === 0) return;
+
+      const file = files[0]; 
       const row = event.target.closest('tr');
       const previewList = row.querySelector('.photo-preview-list');
-
-      if (files.length === 0) return;
-      const badge = document.createElement('div');
-      badge.className = "flex items-center gap-1 font-semibold text-slate-700 bg-slate-200/50 px-2 py-1 rounded border border-slate-200 mt-1";
-      const btnLabel = btnIndex === 1 ? '사진 1' : '사진 2';
-      const colorClass = btnIndex === 1 ? 'text-blue-600' : 'text-indigo-600';
-      badge.innerHTML = `<span class="${colorClass} font-bold">[${btnLabel}]</span> ${files.length}장 선택됨`;
       
-      previewList.appendChild(badge);
+      const webAppUrl = document.getElementById('sheet-url-input').value.trim();
+      if (!webAppUrl) {
+        alert("환경설정(⚙️)에서 구글 Apps Script 웹 앱 URL을 먼저 설정해주세요.");
+        return;
+      }
+
+      // 구분을 위한 식별자 (Export 탭이면 CNTR#, 대시보드면 차량번호 추출)
+      let identifier = '사진';
+      let cntrInput = row.children[2]?.querySelector('input');
+      let carNoCell = row.children[4];
+      
+      if (cntrInput && cntrInput.value) {
+        identifier = cntrInput.value.trim();
+      } else if (carNoCell && carNoCell.innerText) {
+        identifier = carNoCell.innerText.trim();
+      }
+      
+      const fileName = `Export_${identifier}_${Date.now()}_${file.name}`;
+
+      // 로딩 UI 표시
+      const loadingBadge = document.createElement('div');
+      loadingBadge.className = "flex items-center gap-1 font-semibold text-amber-700 bg-amber-100 px-2 py-1.5 rounded border border-amber-200 mt-1";
+      loadingBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> 드라이브 업로드 중...`;
+      previewList.appendChild(loadingBadge);
+
+      try {
+        const base64Data = await getBase64(file);
+
+        // Apps Script로 파일 텍스트 전송
+        const response = await fetch(webAppUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8'
+          },
+          body: JSON.stringify({
+            action: 'uploadPhoto',
+            fileName: fileName,
+            mimeType: file.type,
+            data: base64Data
+          })
+        });
+
+        const result = await response.json();
+
+        if (result.status === 'success') {
+          loadingBadge.remove(); 
+
+          const badge = document.createElement('div');
+          badge.className = "mt-1";
+          const btnLabel = btnIndex === 1 ? '사진 1' : '사진 2';
+          
+          badge.innerHTML = `
+            <div class="flex items-center justify-between font-bold text-slate-700 bg-emerald-50 px-2 py-1.5 rounded-lg border border-emerald-300 shadow-sm">
+              <span class="text-emerald-700 text-[10px]">[${btnLabel}] 저장됨</span>
+              <a href="${result.url}" target="_blank" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] px-2 py-1 rounded transition flex items-center gap-1">
+                보기/다운
+              </a>
+            </div>
+          `;
+          previewList.appendChild(badge);
+        } else {
+          throw new Error(result.message || '업로드 에러');
+        }
+
+      } catch (error) {
+        console.error("사진 업로드 실패:", error);
+        loadingBadge.className = "flex items-center gap-1 font-semibold text-red-700 bg-red-100 px-2 py-1.5 rounded border border-red-200 mt-1 text-[11px]";
+        loadingBadge.innerHTML = `업로드 실패`;
+        alert("업로드 실패: Apps Script 설정 또는 구글 드라이브 권한을 확인해주세요.");
+      }
     }
 
     function findManagerByClient(clientInput) {
@@ -605,6 +680,7 @@
       document.body.appendChild(script);
     }
 
+    // Export 탭 테이블 렌더링
     function renderExportTable(rows) {
       const tbody = document.getElementById('export-table-body');
       if (!tbody) return;
@@ -646,7 +722,7 @@
           <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[14] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs font-bold outline-none focus:border-indigo-500"></td>
           <td class="py-2.5 px-3 border-r border-slate-200 min-w-[130px]"><input type="text" value="${row[15] || ''}" class="w-full text-center bg-slate-50 border border-slate-200 rounded px-2 py-1 text-xs font-bold outline-none focus:border-indigo-500"></td>
           <td class="py-2.5 px-3 border-r border-slate-200 min-w-[140px]">
-            <select class="w-full border border-slate-200 bg-white text-slate-700 font-bold rounded-lg px-2.5 py-1.5 text-xs outline-none cursor-pointer">
+            <select onchange="handleExportStatusChange(this)" class="w-full border border-slate-200 bg-white text-slate-700 font-bold rounded-lg px-2.5 py-1.5 text-xs outline-none cursor-pointer">
               <option value="NONE" selected>선택 안함</option>
               <option value="TALLY">TALLY완료</option>
               <option value="VANNING">적입중</option>
@@ -654,26 +730,45 @@
             </select>
           </td>
           <td class="py-2.5 px-3 min-w-[170px]">
-            <div class="export-photo-btn-group hidden flex flex-col gap-1.5">
+            <div class="export-photo-btn-group flex-col gap-1.5" style="display: none;">
               <div class="flex items-center gap-1.5">
                 <label class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white text-xs px-2 py-1 rounded font-medium flex items-center gap-1">
                   <i data-lucide="camera" class="w-3.5 h-3.5"></i> 사진 1
-                  <input type="file" accept="image/*" multiple class="hidden" onchange="handleMultiplePhotos(event, 1)">
+                  <input type="file" accept="image/*" class="hidden" onchange="handleMultiplePhotos(event, 1)">
                 </label>
                 <label class="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-2 py-1 rounded font-medium flex items-center gap-1">
                   <i data-lucide="camera" class="w-3.5 h-3.5"></i> 사진 2
-                  <input type="file" accept="image/*" multiple class="hidden" onchange="handleMultiplePhotos(event, 2)">
+                  <input type="file" accept="image/*" class="hidden" onchange="handleMultiplePhotos(event, 2)">
                 </label>
               </div>
               <div class="photo-preview-list text-[10px] space-y-0.5"></div>
             </div>
-            <span class="export-default-photo-text text-slate-400 text-center block text-xs">-</span>
+            <span class="export-default-photo-text text-slate-400 text-center block text-xs" style="display: block;">-</span>
           </td>
         `;
         tbody.appendChild(tr);
       });
 
       lucide.createIcons();
+    }
+
+    // 상태 변경 시 사진 업로드 버튼 토글
+    function handleExportStatusChange(selectElement) {
+      const row = selectElement.closest('tr');
+      if (!row) return;
+
+      const photoGroup = row.querySelector('.export-photo-btn-group');
+      const defaultText = row.querySelector('.export-default-photo-text');
+
+      if (selectElement.value === 'DONE') {
+        if (photoGroup) photoGroup.style.display = 'flex';
+        if (defaultText) defaultText.style.display = 'none';
+        selectElement.className = "w-full border border-emerald-300 bg-emerald-50 text-emerald-900 font-extrabold rounded-lg px-2.5 py-1.5 text-xs outline-none cursor-pointer";
+      } else {
+        if (photoGroup) photoGroup.style.display = 'none';
+        if (defaultText) defaultText.style.display = 'block';
+        selectElement.className = "w-full border border-slate-200 bg-white text-slate-700 font-bold rounded-lg px-2.5 py-1.5 text-xs outline-none cursor-pointer";
+      }
     }
 
     function formatPhoneNumber(input) {
