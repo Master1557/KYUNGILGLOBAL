@@ -549,17 +549,19 @@
       });
     }
 
-    // [다중 선택 업그레이드] 버튼 한 번에 여러 장의 사진을 동시에 업로드하는 함수
+    // [강력 다중 업로드 개선] Array.from을 사용하여 선택한 모든 파일이 누락 없이 동시에 업로드되도록 처리
     async function handleMultiplePhotos(event, btnIndex) {
-      const files = event.target.files;
+      const inputEl = event.target;
+      const files = Array.from(inputEl.files); // 파일을 배열로 안전하게 변환
       if (files.length === 0) return;
 
-      const row = event.target.closest('tr');
+      const row = inputEl.closest('tr');
       const previewList = row.querySelector('.photo-preview-list');
       
       const webAppUrl = document.getElementById('sheet-url-input').value.trim();
       if (!webAppUrl) {
         alert("환경설정(⚙️)에서 구글 Apps Script 웹 앱 URL을 먼저 설정해주세요.");
+        inputEl.value = ''; // 초기화
         return;
       }
 
@@ -573,6 +575,7 @@
         identifier = carNoCell.innerText.trim();
       }
 
+      // 선택한 파일들을 순회하며 하나씩 병렬/연속 업로드 진행
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const fileName = `Export_${identifier}_${Date.now()}_${i + 1}_${file.name}`;
@@ -624,6 +627,8 @@
           loadingBadge.innerHTML = `[${i+1}] 업로드 실패`;
         }
       }
+
+      inputEl.value = ''; // 다음 업로드를 위해 입력창 초기화
     }
 
     function findManagerByClient(clientInput) {
@@ -676,7 +681,7 @@
       document.body.appendChild(script);
     }
 
-    // Export 탭 테이블 렌더링 (다중 파일 선택 속성 multiple 추가됨)
+    // Export 탭 테이블 렌더링 (다중 파일 선택 속성 multiple 포함)
     function renderExportTable(rows) {
       const tbody = document.getElementById('export-table-body');
       if (!tbody) return;
