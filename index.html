@@ -268,8 +268,8 @@
       <div class="flex justify-between items-center border-b pb-3">
         <div class="flex items-center gap-3">
           <h3 id="photo-modal-title" class="font-black text-slate-900 text-lg">작업 사진 목록</h3>
-          <!-- 오른쪽 위에 추가된 전체 일괄 다운로드 버튼 -->
-          <button id="modal-bulk-download-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition shadow-sm flex items-center gap-1">
+          <!-- 전체 일괄 다운로드 버튼 -->
+          <button id="modal-bulk-download-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition shadow-sm flex items-center gap-1 cursor-pointer">
             <i data-lucide="download" class="w-3.5 h-3.5"></i> 전체 일괄 다운로드
           </button>
         </div>
@@ -511,7 +511,6 @@
       inputEl.value = '';
     }
 
-    // ★ [핵심 강제 다운로드 로직 적용] 팝업 모달창 띄우기 및 '전체 일괄 다운로드' 기능 구현
     function showPhotoModal(urls, titleText) {
       const modal = document.getElementById('photo-viewer-modal');
       const titleEl = document.getElementById('photo-modal-title');
@@ -521,7 +520,7 @@
       titleEl.innerText = `[${titleText}] 작업 사진 목록 (${urls.length}장)`;
       listEl.innerHTML = '';
 
-      // 오른쪽 위 전체 일괄 다운로드 버튼 동작 연결
+      // ★ 오른쪽 위 전체 일괄 다운로드 클릭 시 순차적으로 강제 다운로드 실행
       bulkBtn.onclick = function() {
         urls.forEach((url, idx) => {
           forceDownloadImage(url, `Photo_${idx + 1}.jpg`);
@@ -531,11 +530,21 @@
       urls.forEach((url, index) => {
         const item = document.createElement('div');
         item.className = "flex items-center justify-between bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-xs font-bold";
+        
+        // 구글 드라이브 뷰어 링크를 실제 이미지 다운로드 직접 링크(export=download)로 변환
+        let directUrl = url;
+        if (url.includes('drive.google.com') && url.includes('/d/')) {
+          const fileIdMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+          if (fileIdMatch && fileIdMatch[1]) {
+            directUrl = `https://drive.google.com/uc?export=download&id=${fileIdMatch[1]}`;
+          }
+        }
+
         item.innerHTML = `
           <span class="text-slate-700">작업 사진 #${index + 1}</span>
           <div class="flex gap-1.5">
             <a href="${url}" target="_blank" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded-lg transition">새창 보기</a>
-            <button onclick="forceDownloadImage('${url}', 'Photo_${index + 1}.jpg')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded-lg transition cursor-pointer">다운로드</button>
+            <button onclick="forceDownloadImage('${directUrl}', 'Photo_${index + 1}.jpg')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded-lg transition cursor-pointer">다운로드</button>
           </div>
         `;
         listEl.appendChild(item);
@@ -545,11 +554,26 @@
       lucide.createIcons();
     }
 
-    // 브라우저가 새 창을 안 띄우고 곧바로 다운로드 폴더로 파일을 내려받게 만드는 강제 다운로드 함수
+    // ★ [핵심 완벽 수정] 구글 드라이브 원본 파일(3MB 이상)을 121KB로 깨지지 않고 온전한 원본 그대로 다운로드하는 로직
     async function forceDownloadImage(url, filename) {
       try {
-        const response = await fetch(url);
+        let downloadUrl = url;
+        if (url.includes('drive.google.com') && url.includes('/d/')) {
+          const fileIdMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+          if (fileIdMatch && fileIdMatch[1]) {
+            downloadUrl = `https://drive.google.com/uc?export=download&id=${fileIdMatch[1]}`;
+          }
+        }
+
+        const response = await fetch(downloadUrl);
         const blob = await response.blob();
+        
+        // 만약 권한 거부 등으로 HTML 조각(121KB 미만)이 받아졌다면 직접 새창 다운로드로 우회
+        if (blob.type.includes('text/html') || blob.size < 150000) {
+          window.open(downloadUrl, '_blank');
+          return;
+        }
+
         const blobUrl = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = blobUrl;
@@ -559,7 +583,6 @@
         document.body.removeChild(a);
         window.URL.revokeObjectURL(blobUrl);
       } catch (err) {
-        // CORS 등으로 직접 다운로드가 막힐 경우 새 창으로 대체 실행
         window.open(url, '_blank');
       }
     }
