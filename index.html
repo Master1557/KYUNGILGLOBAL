@@ -17,9 +17,8 @@
     .nowrap-cell {
       white-space: nowrap;
     }
-    /* ★ 수출 현황판 한눈에 보기 배율 축소 적용 */
     .export-fit-container {
-      zoom: 0.82;
+      zoom: 0.85;
     }
   </style>
 </head>
@@ -115,7 +114,7 @@
     </div>
   </main>
 
-  <!-- TAB 2: Export Status Board (배율 축소 적용으로 한눈에 다 들어옴) -->
+  <!-- TAB 2: Export Status Board (운송사, 선적지 제거 및 화주, 비고 대폭 확장) -->
   <main id="tab-export" class="max-w-full w-[98%] mx-auto px-4 py-6 space-y-6 hidden export-fit-container">
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
       <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-yellow-400/20">
@@ -134,20 +133,19 @@
           <thead class="bg-yellow-400 text-slate-800 font-bold text-xs border-b border-yellow-500">
             <tr>
               <th class="py-3 px-3 text-center w-12 border-r border-yellow-500">NO.</th>
-              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[75px]">규격</th>
-              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[130px]">CNTR#</th>
-              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[120px]">SEAL NO.</th>
-              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[160px]">화 주</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[80px]">규격</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[140px]">CNTR#</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[130px]">SEAL NO.</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[260px]">화 주</th> <!-- 화주 칸 대폭 확장 -->
               <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[90px]">ITEM</th>
-              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[80px]">LINE</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[90px]">LINE</th>
               <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[80px]">수량</th>
               <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[80px]">중량</th>
-              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[100px]">운송사</th>
-              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[100px]">선적지</th>
+              <!-- 운송사, 선적지 열 삭제됨 -->
               <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[80px]">CLS</th>
               <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[100px]">쇼링</th>
-              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[180px]">비 고</th>
-              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[140px]">B/K NO.</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[260px]">비 고</th> <!-- 비고 칸 대폭 확장 -->
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[150px]">B/K NO.</th>
               <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[130px]">담당자</th>
               <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[140px]">작업 상태</th>
               <th class="py-3 px-3 text-center min-w-[170px]">작업사진</th>
@@ -155,7 +153,7 @@
           </thead>
           <tbody id="export-table-body" class="divide-y divide-slate-200 font-medium text-xs">
             <tr>
-              <td colspan="18" class="text-center py-12 text-slate-400 font-semibold">
+              <td colspan="16" class="text-center py-12 text-slate-400 font-semibold">
                 우측 상단 톱니바퀴(⚙️) 버튼을 눌러 구글 Apps Script 웹 앱 URL을 입력해 주세요.
               </td>
             </tr>
@@ -602,12 +600,13 @@
       document.body.appendChild(script);
     }
 
+    // 수출 현황판 테이블 렌더링 (운송사, 선적지 열 제거 및 화주, 비고 대폭 확장)
     function renderExportTable(rows) {
       const tbody = document.getElementById('export-table-body');
       if (!tbody) return;
       tbody.innerHTML = '';
       if (rows.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="18" class="text-center py-8 text-slate-400 font-semibold">시트에 데이터가 없습니다.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="16" class="text-center py-8 text-slate-400 font-semibold">시트에 데이터가 없습니다.</td></tr>`;
         return;
       }
 
@@ -619,16 +618,15 @@
           <td class="py-3 px-3 border-r"><input type="text" value="${row[1] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[2] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[3] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[4] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[5] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[6] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[4] || ''}" class="w-full border rounded px-2.5 py-1.5 text-xs font-bold"></td> <!-- 화주 -->
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[5] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[6] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[7] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[8] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[9] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[10] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs"></td>
+          <!-- row[9](운송사), row[10](선적지) 데이터 건너뜀 -->
           <td class="py-3 px-3 border-r"><input type="text" value="${row[11] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[12] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[13] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[13] || ''}" class="w-full border rounded px-2.5 py-1.5 text-xs"></td> <!-- 비고 -->
           <td class="py-3 px-3 border-r"><input type="text" value="${row[14] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold"></td>
           <td class="py-3 px-3 border-r min-w-[140px]"><input type="text" value="${row[15] || ''}" class="w-full text-center bg-slate-50 border rounded px-2.5 py-1.5 text-xs font-bold"></td>
           <td class="py-3 px-3 border-r min-w-[150px]">
