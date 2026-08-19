@@ -549,7 +549,7 @@
       });
     }
 
-    // 구글 드라이브(Apps Script) 업로드 처리 함수
+    // [중요 수정됨] 구글 드라이브(Apps Script) 업로드 처리 함수 (보안 리다이렉트 허용 추가)
     async function handleMultiplePhotos(event, btnIndex) {
       const files = event.target.files;
       if (files.length === 0) return;
@@ -592,6 +592,7 @@
           headers: {
             'Content-Type': 'text/plain;charset=utf-8'
           },
+          redirect: 'follow', // ★ 구글의 보안 리다이렉트를 허용하여 에러를 막아주는 필수 코드입니다.
           body: JSON.stringify({
             action: 'uploadPhoto',
             fileName: fileName,
@@ -680,7 +681,7 @@
       document.body.appendChild(script);
     }
 
-    // [완벽 수정본] Export 탭 테이블 렌더링
+    // Export 탭 테이블 렌더링
     function renderExportTable(rows) {
       const tbody = document.getElementById('export-table-body');
       if (!tbody) return;
@@ -730,7 +731,6 @@
             </select>
           </td>
           <td class="py-2.5 px-3 min-w-[170px]">
-            <!-- 오류 방지를 위해 대시보드와 동일한 구조 채택 -->
             <div class="export-photo-btn-group hidden">
               <div class="flex flex-col gap-1.5">
                 <div class="flex items-center gap-1.5">
@@ -755,7 +755,7 @@
       lucide.createIcons();
     }
 
-    // [핵심 변경] 브라우저 전체(document)에 이벤트를 걸어 상태 변경을 무조건 감지합니다.
+    // 문서 전체 감지를 통해 새로고침 되어도 상태가 완벽하게 토글되도록 처리 (이벤트 위임)
     document.addEventListener('change', function(e) {
       if (e.target && e.target.classList.contains('export-status-select')) {
         const selectElement = e.target;
