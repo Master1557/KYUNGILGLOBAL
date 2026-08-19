@@ -62,7 +62,6 @@
     </div>
   </header>
 
-  
   <!-- TAB 1: Operator Dashboard -->
   <main id="tab-dashboard" class="max-w-7xl mx-auto px-4 py-6 space-y-6 block">
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -387,11 +386,11 @@
               <div class="flex items-center gap-1.5">
                 <label class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white text-xs px-2.5 py-1 rounded-md font-medium flex items-center gap-1">
                   <i data-lucide="camera" class="w-3.5 h-3.5"></i> 사진 1
-                  <input type="file" accept="image/*" class="hidden" onchange="handleMultiplePhotos(event, 1)">
+                  <input type="file" accept="image/*" multiple class="hidden" onchange="handleMultiplePhotos(event, 1)">
                 </label>
                 <label class="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-2.5 py-1 rounded-md font-medium flex items-center gap-1">
                   <i data-lucide="camera" class="w-3.5 h-3.5"></i> 사진 2
-                  <input type="file" accept="image/*" class="hidden" onchange="handleMultiplePhotos(event, 2)">
+                  <input type="file" accept="image/*" multiple class="hidden" onchange="handleMultiplePhotos(event, 2)">
                 </label>
               </div>
               <div class="photo-preview-list text-[11px] space-y-0.5"></div>
@@ -550,12 +549,11 @@
       });
     }
 
-    // [보안 차단 완전 우회] 폼 데이터 형식으로 구글 드라이브 업로드 처리
+    // [다중 선택 업그레이드] 버튼 한 번에 여러 장의 사진을 동시에 업로드하는 함수
     async function handleMultiplePhotos(event, btnIndex) {
       const files = event.target.files;
       if (files.length === 0) return;
 
-      const file = files[0]; 
       const row = event.target.closest('tr');
       const previewList = row.querySelector('.photo-preview-list');
       
@@ -574,56 +572,57 @@
       } else if (carNoCell && carNoCell.innerText) {
         identifier = carNoCell.innerText.trim();
       }
-      
-      const fileName = `Export_${identifier}_${Date.now()}_${file.name}`;
 
-      const loadingBadge = document.createElement('div');
-      loadingBadge.className = "flex items-center gap-1 font-semibold text-amber-700 bg-amber-100 px-2 py-1.5 rounded border border-amber-200 mt-1";
-      loadingBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> 업로드 중... (시간이 조금 걸릴 수 있습니다)`;
-      previewList.appendChild(loadingBadge);
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const fileName = `Export_${identifier}_${Date.now()}_${i + 1}_${file.name}`;
 
-      try {
-        const base64Data = await getBase64(file);
+        const loadingBadge = document.createElement('div');
+        loadingBadge.className = "flex items-center gap-1 font-semibold text-amber-700 bg-amber-100 px-2 py-1.5 rounded border border-amber-200 mt-1";
+        loadingBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> [${i+1}/${files.length}] 업로드 중...`;
+        previewList.appendChild(loadingBadge);
 
-        // ★ 핵심 변경 포인트: JSON 대신 폼 데이터(URLSearchParams) 형식으로 전송하여 CORS 차단 완벽 우회
-        const formData = new URLSearchParams();
-        formData.append('action', 'uploadPhoto');
-        formData.append('fileName', fileName);
-        formData.append('mimeType', file.type);
-        formData.append('data', base64Data);
+        try {
+          const base64Data = await getBase64(file);
 
-        const response = await fetch(webAppUrl, {
-          method: 'POST',
-          body: formData // Content-Type이 자동으로 application/x-www-form-urlencoded 로 설정되어 차단되지 않음
-        });
+          const formData = new URLSearchParams();
+          formData.append('action', 'uploadPhoto');
+          formData.append('fileName', fileName);
+          formData.append('mimeType', file.type);
+          formData.append('data', base64Data);
 
-        const result = await response.json();
+          const response = await fetch(webAppUrl, {
+            method: 'POST',
+            body: formData
+          });
 
-        if (result.status === 'success') {
-          loadingBadge.remove(); 
+          const result = await response.json();
 
-          const badge = document.createElement('div');
-          badge.className = "mt-1";
-          const btnLabel = btnIndex === 1 ? '사진 1' : '사진 2';
-          
-          badge.innerHTML = `
-            <div class="flex items-center justify-between font-bold text-slate-700 bg-emerald-50 px-2 py-1.5 rounded-lg border border-emerald-300 shadow-sm">
-              <span class="text-emerald-700 text-[10px]">[${btnLabel}] 저장됨</span>
-              <a href="${result.url}" target="_blank" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] px-2 py-1 rounded transition flex items-center gap-1">
-                보기/다운
-              </a>
-            </div>
-          `;
-          previewList.appendChild(badge);
-        } else {
-          throw new Error(result.message || '업로드 에러');
+          if (result.status === 'success') {
+            loadingBadge.remove(); 
+
+            const badge = document.createElement('div');
+            badge.className = "mt-1";
+            const btnLabel = btnIndex === 1 ? '사진 1' : '사진 2';
+            
+            badge.innerHTML = `
+              <div class="flex items-center justify-between font-bold text-slate-700 bg-emerald-50 px-2 py-1.5 rounded-lg border border-emerald-300 shadow-sm">
+                <span class="text-emerald-700 text-[10px]">[${btnLabel}] ${i+1}장 저장됨</span>
+                <a href="${result.url}" target="_blank" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] px-2 py-1 rounded transition flex items-center gap-1">
+                  보기/다운
+                </a>
+              </div>
+            `;
+            previewList.appendChild(badge);
+          } else {
+            throw new Error(result.message || '업로드 에러');
+          }
+
+        } catch (error) {
+          console.error("사진 업로드 실패:", error);
+          loadingBadge.className = "flex items-center gap-1 font-semibold text-red-700 bg-red-100 px-2 py-1.5 rounded border border-red-200 mt-1 text-[11px]";
+          loadingBadge.innerHTML = `[${i+1}] 업로드 실패`;
         }
-
-      } catch (error) {
-        console.error("사진 업로드 실패:", error);
-        loadingBadge.className = "flex items-center gap-1 font-semibold text-red-700 bg-red-100 px-2 py-1.5 rounded border border-red-200 mt-1 text-[11px]";
-        loadingBadge.innerHTML = `업로드 실패`;
-        alert("업로드 실패: 계속 막힌다면 파일 용량이 너무 크거나 구글 보안 차단일 수 있습니다. (" + error.message + ")");
       }
     }
 
@@ -677,7 +676,7 @@
       document.body.appendChild(script);
     }
 
-    // Export 탭 테이블 렌더링
+    // Export 탭 테이블 렌더링 (다중 파일 선택 속성 multiple 추가됨)
     function renderExportTable(rows) {
       const tbody = document.getElementById('export-table-body');
       if (!tbody) return;
@@ -732,11 +731,11 @@
                 <div class="flex items-center gap-1.5">
                   <label class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white text-xs px-2 py-1 rounded font-medium flex items-center gap-1">
                     <i data-lucide="camera" class="w-3.5 h-3.5"></i> 사진 1
-                    <input type="file" accept="image/*" class="hidden" onchange="handleMultiplePhotos(event, 1)">
+                    <input type="file" accept="image/*" multiple class="hidden" onchange="handleMultiplePhotos(event, 1)">
                   </label>
                   <label class="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-2 py-1 rounded font-medium flex items-center gap-1">
                     <i data-lucide="camera" class="w-3.5 h-3.5"></i> 사진 2
-                    <input type="file" accept="image/*" class="hidden" onchange="handleMultiplePhotos(event, 2)">
+                    <input type="file" accept="image/*" multiple class="hidden" onchange="handleMultiplePhotos(event, 2)">
                   </label>
                 </div>
                 <div class="photo-preview-list text-[10px] space-y-0.5"></div>
