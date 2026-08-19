@@ -293,97 +293,58 @@
     dashboardRef.on('value', (snapshot) => {
       const data = snapshot.val() || {};
       localDataMap = data;
-
-      const dbStatusEl = document.getElementById('db-status-badge');
-      if(dbStatusEl) {
-        dbStatusEl.className = "text-xs bg-emerald-950 text-emerald-400 px-2.5 py-1 rounded-full font-bold flex items-center gap-1 border border-emerald-800";
-        dbStatusEl.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> 실시간 연동 중';
-      }
-
       renderDashboardTable(data);
       recalculateDashboardCounts(data);
-    }, (error) => {
-      console.error("Firebase 읽기 오류:", error);
     });
 
     function renderDashboardTable(data) {
       const tbody = document.getElementById('table-body');
       if (!tbody) return;
       tbody.innerHTML = '';
-
       const keys = Object.keys(data);
       if (keys.length === 0) {
         tbody.innerHTML = `<tr><td colspan="11" class="text-center py-8 text-slate-400 font-semibold">등록된 접수 건이 없습니다.</td></tr>`;
         return;
       }
-
       keys.reverse().forEach(key => {
         const item = data[key];
         const tr = document.createElement('tr');
         tr.className = "hover:bg-slate-50/80 transition";
-
-        const typeStyle = item.workType && item.workType.includes('상차') 
-                          ? `<span class="text-amber-500 font-bold">${item.workType}</span>` 
-                          : `<span class="text-blue-600 font-bold">${item.workType || '하차(입고)'}</span>`;
-
+        const typeStyle = item.workType && item.workType.includes('상차') ? `<span class="text-amber-500 font-bold">${item.workType}</span>` : `<span class="text-blue-600 font-bold">${item.workType || '하차(입고)'}</span>`;
         const isCompleted = item.status === 'COMPLETED';
         const photoGroupClass = isCompleted ? '' : 'hidden';
         const defaultTextClass = isCompleted ? 'hidden' : '';
 
-        let selectClass = "status-select w-full border border-amber-300 bg-amber-50 text-amber-900 font-extrabold rounded-lg px-2 py-1.5 text-xs outline-none cursor-pointer";
-        if (item.status === 'IN_PROGRESS') {
-          selectClass = "status-select w-full border border-blue-300 bg-blue-50 text-blue-900 font-extrabold rounded-lg px-2 py-1.5 text-xs outline-none cursor-pointer";
-        } else if (item.status === 'COMPLETED') {
-          selectClass = "status-select w-full border border-emerald-300 bg-emerald-50 text-emerald-900 font-extrabold rounded-lg px-2 py-1.5 text-xs outline-none cursor-pointer";
-        }
-
         tr.innerHTML = `
-          <td class="py-3.5 px-3 text-center nowrap-cell">
-            <button onclick="deleteDashboardRow('${key}')" class="bg-red-50 hover:bg-red-100 text-red-600 p-1.5 rounded-lg border border-red-200 transition" title="접수건 삭제">
-              <i data-lucide="trash-2" class="w-4 h-4"></i>
-            </button>
-          </td>
+          <td class="py-3.5 px-3 text-center nowrap-cell"><button onclick="deleteDashboardRow('${key}')" class="bg-red-50 text-red-600 p-1.5 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
           <td class="py-3.5 px-4 text-center nowrap-cell">${typeStyle}</td>
           <td class="py-3.5 px-4 text-slate-500 nowrap-cell">${item.timeStr || '-'}</td>
-          <td class="py-3.5 px-4 min-w-[130px] nowrap-cell">
-            <input type="text" value="${item.manager || ''}" onchange="updateFirebaseField('${key}', 'manager', this.value)" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 font-bold outline-none focus:border-blue-500">
-          </td>
-          <td class="py-3.5 px-4 font-bold text-slate-800 nowrap-cell">${item.carNumber || ''}</td>
-          <td class="py-3.5 px-4 text-slate-500 nowrap-cell">${item.phoneNumber || ''}</td>
-          <td class="py-3.5 px-4 nowrap-cell">
-            <input type="text" value="${item.clientName || ''}" onchange="updateFirebaseField('${key}', 'clientName', this.value)" class="w-full border border-slate-200 rounded px-2 py-1 text-xs text-slate-800 outline-none">
-          </td>
-          <td class="py-3.5 px-4 text-center font-bold text-blue-600 nowrap-cell">${item.quantity || 0}</td>
-          <td class="py-3.5 px-4 nowrap-cell">
-            <input type="text" value="${item.note || ''}" onchange="updateFirebaseField('${key}', 'note', this.value)" class="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1 text-xs text-slate-700 outline-none">
-          </td>
-          <td class="py-3.5 px-4 text-center nowrap-cell">
-            <select onchange="updateDashboardStatus('${key}', this.value)" class="${selectClass}">
-              <option value="WAITING" ${item.status === 'WAITING' ? 'selected' : ''} class="text-slate-900 bg-white">접수완료</option>
-              <option value="IN_PROGRESS" ${item.status === 'IN_PROGRESS' ? 'selected' : ''} class="text-slate-900 bg-white">작업 중</option>
-              <option value="COMPLETED" ${item.status === 'COMPLETED' ? 'selected' : ''} class="text-slate-900 bg-white">작업 완료</option>
+          <td class="py-3.5 px-4"><input type="text" value="${item.manager || ''}" onchange="updateFirebaseField('${key}', 'manager', this.value)" class="w-full bg-slate-50 border rounded px-2 py-1 text-xs"></td>
+          <td class="py-3.5 px-4 font-bold">${item.carNumber || ''}</td>
+          <td class="py-3.5 px-4 text-slate-500">${item.phoneNumber || ''}</td>
+          <td class="py-3.5 px-4"><input type="text" value="${item.clientName || ''}" onchange="updateFirebaseField('${key}', 'clientName', this.value)" class="w-full border rounded px-2 py-1 text-xs"></td>
+          <td class="py-3.5 px-4 text-center font-bold text-blue-600">${item.quantity || 0}</td>
+          <td class="py-3.5 px-4"><input type="text" value="${item.note || ''}" onchange="updateFirebaseField('${key}', 'note', this.value)" class="w-full bg-slate-50 border rounded px-2 py-1 text-xs"></td>
+          <td class="py-3.5 px-4 text-center">
+            <select onchange="updateDashboardStatus('${key}', this.value)" class="border rounded px-2 py-1 text-xs font-bold">
+              <option value="WAITING" ${item.status === 'WAITING' ? 'selected' : ''}>접수완료</option>
+              <option value="IN_PROGRESS" ${item.status === 'IN_PROGRESS' ? 'selected' : ''}>작업 중</option>
+              <option value="COMPLETED" ${item.status === 'COMPLETED' ? 'selected' : ''}>작업 완료</option>
             </select>
           </td>
           <td class="py-3.5 px-4 photo-cell nowrap-cell">
             <div class="photo-btn-group ${photoGroupClass} flex flex-col gap-1.5">
               <div class="flex items-center gap-1.5">
-                <label class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white text-xs px-2.5 py-1 rounded-md font-medium flex items-center gap-1">
-                  <i data-lucide="camera" class="w-3.5 h-3.5"></i> 사진 1
-                  <input type="file" accept="image/*" multiple class="hidden" onchange="handleMultiplePhotos(event, 1)">
-                </label>
-                <label class="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-2.5 py-1 rounded-md font-medium flex items-center gap-1">
-                  <i data-lucide="camera" class="w-3.5 h-3.5"></i> 사진 2
-                  <input type="file" accept="image/*" multiple class="hidden" onchange="handleMultiplePhotos(event, 2)">
-                </label>
+                <label class="cursor-pointer bg-blue-600 text-white text-xs px-2.5 py-1 rounded font-medium">사진 1<input type="file" accept="image/*" multiple class="hidden" onchange="handleMultiplePhotos(event, 1)"></label>
+                <label class="cursor-pointer bg-indigo-600 text-white text-xs px-2.5 py-1 rounded font-medium">사진 2<input type="file" accept="image/*" multiple class="hidden" onchange="handleMultiplePhotos(event, 2)"></label>
               </div>
-              <div class="photo-preview-list text-[11px] space-y-0.5"></div>
+              <div class="photo-preview-list text-[11px]"></div>
             </div>
             <span class="default-photo-text ${defaultTextClass} text-slate-400 text-xs">-</span>
           </td>
         `;
         tbody.appendChild(tr);
       });
-
       lucide.createIcons();
     }
 
@@ -395,82 +356,57 @@
         else if (item.status === 'IN_PROGRESS') progress++;
         else if (item.status === 'COMPLETED') completed++;
       });
-      const totalEl = document.getElementById('count-total');
-      if (totalEl) {
-        document.getElementById('count-total').innerText = total;
-        document.getElementById('count-waiting').innerText = waiting;
-        document.getElementById('count-progress').innerText = progress;
-        document.getElementById('count-completed').innerText = completed;
-        document.getElementById('nav-badge').innerText = total;
-      }
-      return waiting;
+      document.getElementById('count-total').innerText = total;
+      document.getElementById('count-waiting').innerText = waiting;
+      document.getElementById('count-progress').innerText = progress;
+      document.getElementById('count-completed').innerText = completed;
+      document.getElementById('nav-badge').innerText = total;
     }
 
     function handleKioskSubmit(e) {
       e.preventDefault();
-      const workTypeInput = document.querySelector('input[name="work-type"]:checked');
-      const workType = workTypeInput ? workTypeInput.value : '하차(입고)';
+      const workType = document.querySelector('input[name="work-type"]:checked')?.value || '하차(입고)';
       const clientName = document.getElementById('client-name').value.trim();
       const carNumber = document.getElementById('car-number').value.trim();
       const phoneNumber = document.getElementById('phone-number').value.trim();
       const quantity = document.getElementById('quantity').value.trim();
-      const matchedManager = findManagerByClient(clientName);
-
       const now = new Date();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const day = String(now.getDate()).padStart(2, '0');
-      const hours = String(now.getHours()).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      const timeStr = `${month}-${day} ${hours}:${minutes}`;
+      const timeStr = `${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
 
-      const newItem = {
-        workType: workType, timeStr: timeStr, manager: matchedManager,
-        carNumber: carNumber, phoneNumber: phoneNumber, clientName: clientName,
-        quantity: quantity, note: "키오스크 신규 접수", status: "WAITING",
-        timestamp: firebase.database.ServerValue.TIMESTAMP
-      };
-
-      dashboardRef.push(newItem).then(() => {
+      dashboardRef.push({
+        workType, timeStr, manager: "미정", carNumber, phoneNumber, clientName, quantity,
+        note: "키오스크 신규 접수", status: "WAITING", timestamp: firebase.database.ServerValue.TIMESTAMP
+      }).then(() => {
         document.getElementById('kiosk-success-modal').classList.remove('hidden');
-        if (autoCloseTimer) clearTimeout(autoCloseTimer);
-        autoCloseTimer = setTimeout(() => { closeKioskSuccessModal(); }, 10000);
-      }).catch(err => { alert("접수 저장 실패: " + err.message); });
+        setTimeout(() => closeKioskSuccessModal(), 10000);
+      });
     }
 
-    function updateFirebaseField(key, field, value) { dashboardRef.child(key).update({ [field]: value }); }
-    function updateDashboardStatus(key, newStatus) { dashboardRef.child(key).update({ status: newStatus }); }
-    function deleteDashboardRow(key) { if (confirm("해당 접수 건을 삭제하시겠습니까?")) { dashboardRef.child(key).remove(); } }
+    function updateFirebaseField(key, field, val) { dashboardRef.child(key).update({ [field]: val }); }
+    function updateDashboardStatus(key, val) { dashboardRef.child(key).update({ status: val }); }
+    function deleteDashboardRow(key) { if (confirm("삭제하시겠습니까?")) dashboardRef.child(key).remove(); }
 
     function switchTab(tabName) {
       ['dashboard', 'export', 'kiosk'].forEach(t => {
-        const tabEl = document.getElementById(`tab-${t}`);
-        const btnEl = document.getElementById(`nav-${t}-btn`);
-        if (t === tabName) {
-          tabEl.classList.remove('hidden'); tabEl.classList.add('block');
-          if (btnEl) btnEl.className = "px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition bg-blue-600 text-white shadow-sm";
-        } else {
-          tabEl.classList.add('hidden'); tabEl.classList.remove('block');
-          if (btnEl) btnEl.className = "px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-700/50 transition";
-        }
+        document.getElementById(`tab-${t}`).className = (t === tabName) ? "max-w-7xl mx-auto px-4 py-6 space-y-6 block" : "hidden";
+        const btn = document.getElementById(`nav-${t}-btn`);
+        if (btn) btn.className = (t === tabName) ? "px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition bg-blue-600 text-white shadow-sm" : "px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-700/50 transition";
       });
     }
 
     function openSettingsModal() { document.getElementById('settingsModal').classList.remove('hidden'); }
     function closeSettingsModal() { document.getElementById('settingsModal').classList.add('hidden'); }
-
-    function saveSettings() { 
+    function saveSettings() {
       const url = document.getElementById('sheet-url-input').value.trim();
-      if (!url) { alert("URL을 입력해 주세요."); return; }
+      if (!url) { alert("URL을 입력하세요."); return; }
       localStorage.setItem('sheetWebAppUrl', url);
-      closeSettingsModal(); 
+      closeSettingsModal();
       fetchSheetData(url);
     }
-
     function closeKioskSuccessModal() {
-      if (autoCloseTimer) { clearTimeout(autoCloseTimer); autoCloseTimer = null; }
       document.getElementById('kiosk-success-modal').classList.add('hidden');
       document.getElementById('kiosk-form').reset();
-      if (isKioskOnlyMode) { switchTab('kiosk'); } else { switchTab('dashboard'); }
+      switchTab(isKioskOnlyMode ? 'kiosk' : 'dashboard');
     }
 
     function getBase64(file) {
@@ -482,7 +418,7 @@
       });
     }
 
-    // [최종 묶음 저장 기능] 여러 장을 선택하면 하나로 묶어서 다운로드 링크 제공
+    // [최종 철저 봉합] 한 번에 여러 장을 올리든 단독으로 올리든 무조건 딱 하나의 버튼으로 통합 관리
     async function handleMultiplePhotos(event, btnIndex) {
       const inputEl = event.target;
       const files = Array.from(inputEl.files);
@@ -490,31 +426,21 @@
 
       const row = inputEl.closest('tr');
       const previewList = row.querySelector('.photo-preview-list');
-      
       const webAppUrl = document.getElementById('sheet-url-input').value.trim();
-      if (!webAppUrl) {
-        alert("환경설정(⚙️)에서 구글 Apps Script 웹 앱 URL을 먼저 설정해주세요.");
-        inputEl.value = '';
-        return;
-      }
+      if (!webAppUrl) { alert("환경설정에서 웹 앱 URL을 먼저 입력해주세요."); inputEl.value = ''; return; }
 
       let identifier = '사진';
       let cntrInput = row.children[2]?.querySelector('input');
-      let carNoCell = row.children[4];
-      if (cntrInput && cntrInput.value) {
-        identifier = cntrInput.value.trim();
-      } else if (carNoCell && carNoCell.innerText) {
-        identifier = carNoCell.innerText.trim();
-      }
+      if (cntrInput && cntrInput.value) identifier = cntrInput.value.trim();
 
-      // 기존에 해당 버튼으로 만들어졌던 이전 묶음 상자가 있다면 제거
-      const existingBadge = previewList.querySelector(`.bundle-badge-${btnIndex}`);
-      if (existingBadge) existingBadge.remove();
+      // 기존에 생성되어 있던 해당 번호의 업로드 상자 무조건 삭제 후 새로 생성
+      const oldBox = previewList.querySelector(`.unified-photo-box-${btnIndex}`);
+      if (oldBox) oldBox.remove();
 
-      const loadingBadge = document.createElement('div');
-      loadingBadge.className = "flex items-center gap-1 font-semibold text-amber-700 bg-amber-100 px-2.5 py-1.5 rounded border border-amber-200 mt-1 shadow-sm";
-      loadingBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> [사진 ${btnIndex}] ${files.length}장 업로드 중...`;
-      previewList.appendChild(loadingBadge);
+      const loadingBox = document.createElement('div');
+      loadingBox.className = `unified-photo-box-${btnIndex} flex items-center gap-1 font-semibold text-amber-700 bg-amber-100 px-2 py-1.5 rounded border border-amber-200 mt-1`;
+      loadingBox.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> [사진 ${btnIndex}] ${files.length}장 업로드 중...`;
+      previewList.appendChild(loadingBox);
 
       let uploadedUrls = [];
 
@@ -540,14 +466,14 @@
           }
         }
 
-        loadingBadge.remove();
+        loadingBox.remove();
 
-        // 묶음 다운로드 박스 생성 (버튼 하나로 여러 링크를 새 창으로 모두 열어줌)
-        const badge = document.createElement('div');
-        badge.className = `mt-1 bundle-badge-${btnIndex}`;
+        // 최종 통합 다운로드 버튼 생성 (칸이 절대 늘어나지 않고 딱 1개만 유지됨)
+        const finalBox = document.createElement('div');
+        finalBox.className = `unified-photo-box-${btnIndex} mt-1`;
         const btnLabel = btnIndex === 1 ? '사진 1' : '사진 2';
 
-        badge.innerHTML = `
+        finalBox.innerHTML = `
           <div class="flex items-center justify-between font-bold text-slate-700 bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-300 shadow-sm">
             <span class="text-emerald-700 text-[11px]">[${btnLabel}] ${files.length}장 저장됨</span>
             <button onclick='openAllPhotos(${JSON.stringify(uploadedUrls)})' class="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] px-2.5 py-1 rounded transition flex items-center gap-1 cursor-pointer">
@@ -555,35 +481,20 @@
             </button>
           </div>
         `;
-        previewList.appendChild(badge);
+        previewList.appendChild(finalBox);
 
       } catch (error) {
-        console.error("사진 업로드 실패:", error);
-        loadingBadge.remove();
-        alert("사진 업로드 중 문제가 발생했습니다: " + error.message);
+        console.error("업로드 실패:", error);
+        loadingBox.remove();
+        alert("업로드 실패: " + error.message);
       }
 
       inputEl.value = '';
     }
 
-    // 묶여 있는 사진들을 새 창으로 한꺼번에 열어주는 함수
     function openAllPhotos(urls) {
       if (!urls || urls.length === 0) return;
-      urls.forEach(url => {
-        window.open(url, '_blank');
-      });
-    }
-
-    function findManagerByClient(clientInput) {
-      if (!clientInput) return "미정";
-      const cleanInput = clientInput.trim().toLowerCase();
-      for (const [keyClient, manager] of Object.entries(clientManagerMap)) {
-        if (keyClient && manager) {
-          const cleanKey = keyClient.trim().toLowerCase();
-          if (cleanKey.includes(cleanInput) || cleanInput.includes(cleanKey)) { return manager; }
-        }
-      }
-      return "미정";
+      urls.forEach(url => window.open(url, '_blank'));
     }
 
     function fetchSheetData(webAppUrl) {
@@ -597,7 +508,6 @@
       if (oldScript) oldScript.remove();
 
       window.onSheetDataReceived = function(data) {
-        if (data && data.error) { return; }
         renderExportTable(data || []);
         if (badge) {
           badge.className = "text-xs text-emerald-800 ml-2 bg-emerald-200 px-2.5 py-1 rounded-full font-bold";
@@ -607,8 +517,7 @@
 
       const script = document.createElement('script');
       script.id = 'jsonp-script-loader';
-      const connector = webAppUrl.includes('?') ? '&' : '?';
-      script.src = `${webAppUrl}${connector}callback=onSheetDataReceived&_ts=${Date.now()}`;
+      script.src = `${webAppUrl}${webAppUrl.includes('?') ? '&' : '?'}callback=onSheetDataReceived&_ts=${Date.now()}`;
       document.body.appendChild(script);
     }
 
@@ -616,40 +525,33 @@
       const tbody = document.getElementById('export-table-body');
       if (!tbody) return;
       tbody.innerHTML = '';
-      clientManagerMap = {};
-
       if (rows.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="18" class="text-center py-8 text-slate-400 font-semibold">시트에 데이터가 없거나 불러올 수 없습니다.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="18" class="text-center py-8 text-slate-400 font-semibold">시트에 데이터가 없습니다.</td></tr>`;
         return;
       }
 
       rows.forEach((row, idx) => {
-        const clientName = (row[4] || '').toString().trim();
-        const managerName = (row[15] || '').toString().trim();
-        if (clientName && managerName) { clientManagerMap[clientName] = managerName; }
-
         const tr = document.createElement('tr');
         tr.className = "hover:bg-slate-50 transition";
-
         tr.innerHTML = `
-          <td class="py-2.5 px-2 text-center bg-green-100/60 border-r border-slate-200 font-bold text-slate-800">${row[0] || (idx + 1)}</td>
-          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[1] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs outline-none"></td>
-          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[2] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs font-bold text-slate-800 outline-none"></td>
-          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[3] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs outline-none"></td>
-          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[4] || ''}" class="w-full border border-slate-200 rounded px-2 py-1 text-xs font-bold outline-none"></td>
-          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[5] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs outline-none"></td>
-          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[6] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs outline-none"></td>
-          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[7] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs font-bold outline-none"></td>
-          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[8] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs outline-none"></td>
-          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[9] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs outline-none"></td>
-          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[10] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs outline-none"></td>
-          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[11] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs outline-none"></td>
-          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[12] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs outline-none"></td>
-          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[13] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs outline-none"></td>
-          <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[14] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs font-bold outline-none"></td>
-          <td class="py-2.5 px-3 border-r border-slate-200 min-w-[130px]"><input type="text" value="${row[15] || ''}" class="w-full text-center bg-slate-50 border border-slate-200 rounded px-2 py-1 text-xs font-bold outline-none"></td>
-          <td class="py-2.5 px-3 border-r border-slate-200 min-w-[140px]">
-            <select class="export-status-select w-full border border-slate-200 bg-white text-slate-700 font-bold rounded-lg px-2.5 py-1.5 text-xs outline-none cursor-pointer">
+          <td class="py-2.5 px-2 text-center bg-green-100/60 border-r font-bold">${row[0] || (idx + 1)}</td>
+          <td class="py-2.5 px-2 border-r"><input type="text" value="${row[1] || ''}" class="w-full text-center border rounded px-1 py-1 text-xs"></td>
+          <td class="py-2.5 px-2 border-r"><input type="text" value="${row[2] || ''}" class="w-full text-center border rounded px-1 py-1 text-xs font-bold"></td>
+          <td class="py-2.5 px-2 border-r"><input type="text" value="${row[3] || ''}" class="w-full text-center border rounded px-1 py-1 text-xs"></td>
+          <td class="py-2.5 px-2 border-r"><input type="text" value="${row[4] || ''}" class="w-full border rounded px-2 py-1 text-xs font-bold"></td>
+          <td class="py-2.5 px-2 border-r"><input type="text" value="${row[5] || ''}" class="w-full text-center border rounded px-1 py-1 text-xs"></td>
+          <td class="py-2.5 px-2 border-r"><input type="text" value="${row[6] || ''}" class="w-full text-center border rounded px-1 py-1 text-xs"></td>
+          <td class="py-2.5 px-2 border-r"><input type="text" value="${row[7] || ''}" class="w-full text-center border rounded px-1 py-1 text-xs font-bold"></td>
+          <td class="py-2.5 px-2 border-r"><input type="text" value="${row[8] || ''}" class="w-full text-center border rounded px-1 py-1 text-xs"></td>
+          <td class="py-2.5 px-2 border-r"><input type="text" value="${row[9] || ''}" class="w-full text-center border rounded px-1 py-1 text-xs"></td>
+          <td class="py-2.5 px-2 border-r"><input type="text" value="${row[10] || ''}" class="w-full text-center border rounded px-1 py-1 text-xs"></td>
+          <td class="py-2.5 px-2 border-r"><input type="text" value="${row[11] || ''}" class="w-full text-center border rounded px-1 py-1 text-xs"></td>
+          <td class="py-2.5 px-2 border-r"><input type="text" value="${row[12] || ''}" class="w-full text-center border rounded px-1 py-1 text-xs"></td>
+          <td class="py-2.5 px-2 border-r"><input type="text" value="${row[13] || ''}" class="w-full text-center border rounded px-1 py-1 text-xs"></td>
+          <td class="py-2.5 px-2 border-r"><input type="text" value="${row[14] || ''}" class="w-full text-center border rounded px-1 py-1 text-xs font-bold"></td>
+          <td class="py-2.5 px-3 border-r min-w-[130px]"><input type="text" value="${row[15] || ''}" class="w-full text-center bg-slate-50 border rounded px-2 py-1 text-xs font-bold"></td>
+          <td class="py-2.5 px-3 border-r min-w-[140px]">
+            <select class="export-status-select w-full border bg-white text-slate-700 font-bold rounded-lg px-2.5 py-1.5 text-xs outline-none cursor-pointer">
               <option value="NONE" selected>선택 안함</option>
               <option value="TALLY">TALLY완료</option>
               <option value="VANNING">적입중</option>
@@ -660,14 +562,8 @@
             <div class="export-photo-btn-group hidden">
               <div class="flex flex-col gap-1.5">
                 <div class="flex items-center gap-1.5">
-                  <label class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white text-xs px-2 py-1 rounded font-medium flex items-center gap-1">
-                    <i data-lucide="camera" class="w-3.5 h-3.5"></i> 사진 1
-                    <input type="file" accept="image/*" multiple class="hidden" onchange="handleMultiplePhotos(event, 1)">
-                  </label>
-                  <label class="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-2 py-1 rounded font-medium flex items-center gap-1">
-                    <i data-lucide="camera" class="w-3.5 h-3.5"></i> 사진 2
-                    <input type="file" accept="image/*" multiple class="hidden" onchange="handleMultiplePhotos(event, 2)">
-                  </label>
+                  <label class="cursor-pointer bg-blue-600 text-white text-xs px-2 py-1 rounded font-medium">사진 1<input type="file" accept="image/*" multiple class="hidden" onchange="handleMultiplePhotos(event, 1)"></label>
+                  <label class="cursor-pointer bg-indigo-600 text-white text-xs px-2 py-1 rounded font-medium">사진 2<input type="file" accept="image/*" multiple class="hidden" onchange="handleMultiplePhotos(event, 2)"></label>
                 </div>
                 <div class="photo-preview-list text-[10px] space-y-0.5"></div>
               </div>
@@ -677,7 +573,6 @@
         `;
         tbody.appendChild(tr);
       });
-
       lucide.createIcons();
     }
 
@@ -686,7 +581,6 @@
         const selectElement = e.target;
         const row = selectElement.closest('tr');
         if (!row) return;
-
         const photoGroup = row.querySelector('.export-photo-btn-group');
         const defaultText = row.querySelector('.export-default-photo-text');
 
@@ -701,16 +595,6 @@
         }
       }
     });
-
-    function formatPhoneNumber(input) {
-      let val = input.value.replace(/\D/g, '');
-      let formatted = '';
-      if (val.length < 4) formatted = val;
-      else if (val.length < 8) formatted = val.substring(0, 3) + '-' + val.substring(3);
-      else if (val.length < 11) formatted = val.substring(0, 3) + '-' + val.substring(3, 7) + '-' + val.substring(7);
-      else formatted = val.substring(0, 3) + '-' + val.substring(3, 7) + '-' + val.substring(7, 11);
-      input.value = formatted;
-    }
 
     window.addEventListener('DOMContentLoaded', () => {
       if (isKioskOnlyMode) {
