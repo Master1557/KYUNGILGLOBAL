@@ -262,15 +262,21 @@
     </div>
   </div>
 
-  <!-- 사진 목록을 한눈에 보여주는 팝업 모달창 (일괄 다운 클릭 시 실행) -->
+  <!-- 사진 목록 및 일괄 다운로드 모달창 -->
   <div id="photo-viewer-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4 z-50">
     <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
       <div class="flex justify-between items-center border-b pb-3">
-        <h3 id="photo-modal-title" class="font-black text-slate-900 text-lg">업로드된 작업 사진 목록</h3>
+        <div class="flex items-center gap-3">
+          <h3 id="photo-modal-title" class="font-black text-slate-900 text-lg">작업 사진 목록</h3>
+          <!-- 오른쪽 위에 추가된 전체 일괄 다운로드 버튼 -->
+          <button id="modal-bulk-download-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition shadow-sm flex items-center gap-1">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i> 전체 일괄 다운로드
+          </button>
+        </div>
         <button onclick="closePhotoModal()" class="text-slate-400 hover:text-slate-600 p-1"><i data-lucide="x" class="w-6 h-6"></i></button>
       </div>
       <div id="photo-modal-list" class="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
-        <!-- 동적으로 모든 사진 링크가 리스트로 생성됨 -->
+        <!-- 동적으로 리스트 생성 -->
       </div>
       <div class="flex justify-end pt-2 border-t">
         <button onclick="closePhotoModal()" class="px-5 py-2.5 bg-slate-800 text-white font-bold rounded-xl text-xs">닫기</button>
@@ -434,7 +440,6 @@
       });
     }
 
-    // [전체 수정] 다중 업로드 후 모든 링크를 배열로 담아두고 모달창에 통째로 전달
     async function handleMultiplePhotos(event, btnIndex) {
       const inputEl = event.target;
       const files = Array.from(inputEl.files);
@@ -487,9 +492,6 @@
         finalBox.className = `unified-photo-box-${btnIndex} mt-1`;
         const btnLabel = btnIndex === 1 ? '사진 1' : '사진 2';
 
-        // ★ onclick 시점 전역 변수로 안전하게 전체 URL 배열을 넘김
-        window[`photoUrls_${row.rowIndex}_${btnIndex}`] = uploadedUrls;
-
         finalBox.innerHTML = `
           <div class="flex items-center justify-between font-bold text-slate-700 bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-300 shadow-sm">
             <span class="text-emerald-700 text-[11px]">[${btnLabel}] ${files.length}장 저장됨</span>
@@ -509,14 +511,22 @@
       inputEl.value = '';
     }
 
-    // 모달창을 열어 모든 사진 링크를 리스트로 표출
+    // ★ [핵심 강제 다운로드 로직 적용] 팝업 모달창 띄우기 및 '전체 일괄 다운로드' 기능 구현
     function showPhotoModal(urls, titleText) {
       const modal = document.getElementById('photo-viewer-modal');
       const titleEl = document.getElementById('photo-modal-title');
       const listEl = document.getElementById('photo-modal-list');
+      const bulkBtn = document.getElementById('modal-bulk-download-btn');
 
       titleEl.innerText = `[${titleText}] 작업 사진 목록 (${urls.length}장)`;
       listEl.innerHTML = '';
+
+      // 오른쪽 위 전체 일괄 다운로드 버튼 동작 연결
+      bulkBtn.onclick = function() {
+        urls.forEach((url, idx) => {
+          forceDownloadImage(url, `Photo_${idx + 1}.jpg`);
+        });
+      };
 
       urls.forEach((url, index) => {
         const item = document.createElement('div');
@@ -525,13 +535,33 @@
           <span class="text-slate-700">작업 사진 #${index + 1}</span>
           <div class="flex gap-1.5">
             <a href="${url}" target="_blank" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded-lg transition">새창 보기</a>
-            <a href="${url}" download target="_blank" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded-lg transition">다운로드</a>
+            <button onclick="forceDownloadImage('${url}', 'Photo_${index + 1}.jpg')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded-lg transition cursor-pointer">다운로드</button>
           </div>
         `;
         listEl.appendChild(item);
       });
 
       modal.classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    // 브라우저가 새 창을 안 띄우고 곧바로 다운로드 폴더로 파일을 내려받게 만드는 강제 다운로드 함수
+    async function forceDownloadImage(url, filename) {
+      try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(blobUrl);
+      } catch (err) {
+        // CORS 등으로 직접 다운로드가 막힐 경우 새 창으로 대체 실행
+        window.open(url, '_blank');
+      }
     }
 
     function closePhotoModal() {
