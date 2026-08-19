@@ -59,8 +59,8 @@
     </div>
   </header>
 
-  <!-- TAB 1: Operator Dashboard -->
-  <main id="tab-dashboard" class="max-w-7xl mx-auto px-4 py-6 space-y-6 block">
+  <!-- TAB 1: Operator Dashboard (칸 간격 및 길이 대폭 확장) -->
+  <main id="tab-dashboard" class="max-w-[98%] mx-auto px-4 py-6 space-y-6 block">
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
       <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center justify-between">
         <div><p class="text-xs font-semibold text-slate-500 mb-1">금일 총 접수</p><p class="text-3xl font-black text-slate-900"><span id="count-total">0</span> <span class="text-lg font-bold text-slate-600">건</span></p></div>
@@ -84,21 +84,21 @@
       <div class="p-5 border-b border-slate-100 flex justify-between items-center">
         <div class="flex items-center gap-2"><i data-lucide="clipboard-check" class="w-5 h-5 text-slate-600"></i><h2 class="font-bold text-slate-800 text-lg">실시간 접수 현황 (Firebase 실시간 연동)</h2></div>
       </div>
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm text-slate-600">
+      <div class="overflow-x-auto w-full">
+        <table class="w-full text-left text-sm text-slate-600 whitespace-nowrap">
           <thead class="bg-slate-50 text-slate-500 font-semibold text-xs border-b border-slate-100">
             <tr>
-              <th class="py-3.5 px-3 text-center w-12 nowrap-cell">삭제</th>
-              <th class="py-3.5 px-4 text-center nowrap-cell">구분</th>
-              <th class="py-3.5 px-4 nowrap-cell">접수시간</th>
-              <th class="py-3.5 px-4 min-w-[130px] nowrap-cell">담당자</th>
-              <th class="py-3.5 px-4 nowrap-cell">차량번호</th>
-              <th class="py-3.5 px-4 nowrap-cell">기사 연락처</th>
-              <th class="py-3.5 px-4 min-w-[150px] nowrap-cell">화주명</th>
-              <th class="py-3.5 px-4 text-center nowrap-cell">수량</th>
-              <th class="py-3.5 px-4 min-w-[180px] nowrap-cell">비고</th>
-              <th class="py-3.5 px-4 text-center min-w-[120px] nowrap-cell">상태</th>
-              <th class="py-3.5 px-4 min-w-[160px] nowrap-cell">작업사진</th>
+              <th class="py-3.5 px-3 text-center w-14 nowrap-cell">삭제</th>
+              <th class="py-3.5 px-4 text-center nowrap-cell min-w-[90px]">구분</th>
+              <th class="py-3.5 px-4 nowrap-cell min-w-[120px]">접수시간</th>
+              <th class="py-3.5 px-4 min-w-[150px] nowrap-cell">담당자</th>
+              <th class="py-3.5 px-4 nowrap-cell min-w-[130px]">차량번호</th>
+              <th class="py-3.5 px-4 nowrap-cell min-w-[140px]">기사 연락처</th>
+              <th class="py-3.5 px-4 min-w-[180px] nowrap-cell">화주명</th>
+              <th class="py-3.5 px-4 text-center nowrap-cell min-w-[80px]">수량</th>
+              <th class="py-3.5 px-4 min-w-[220px] nowrap-cell">비고</th>
+              <th class="py-3.5 px-4 text-center min-w-[130px] nowrap-cell">상태</th>
+              <th class="py-3.5 px-4 min-w-[180px] nowrap-cell">작업사진</th>
             </tr>
           </thead>
           <tbody id="table-body" class="divide-y divide-slate-100 font-medium">
@@ -111,7 +111,7 @@
     </div>
   </main>
 
-  <!-- TAB 2: Export Status Board -->
+  <!-- TAB 2: Export Status Board (칸 크기 대폭 큼직하게 확장) -->
   <main id="tab-export" class="max-w-full w-[98%] mx-auto px-4 py-6 space-y-6 hidden">
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
       <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-yellow-400/20">
@@ -127,29 +127,29 @@
 
       <div class="overflow-x-auto w-full">
         <table class="w-full text-left text-sm text-slate-700 whitespace-nowrap">
-          <thead class="bg-yellow-400 text-slate-800 font-bold text-[11px] border-b border-yellow-500">
+          <thead class="bg-yellow-400 text-slate-800 font-bold text-xs border-b border-yellow-500">
             <tr>
-              <th class="py-2.5 px-2 text-center w-10 border-r border-yellow-500">NO.</th>
-              <th class="py-2.5 px-2 text-center border-r border-yellow-500 w-16">규격</th>
-              <th class="py-2.5 px-2 text-center border-r border-yellow-500 w-32">CNTR#</th>
-              <th class="py-2.5 px-2 text-center border-r border-yellow-500 w-28">SEAL NO.</th>
-              <th class="py-2.5 px-2 text-center border-r border-yellow-500 min-w-[140px]">화 주</th>
-              <th class="py-2.5 px-2 text-center border-r border-yellow-500 min-w-[80px]">ITEM</th>
-              <th class="py-2.5 px-2 text-center border-r border-yellow-500 w-16">LINE</th>
-              <th class="py-2.5 px-2 text-center border-r border-yellow-500 w-16">수량</th>
-              <th class="py-2.5 px-2 text-center border-r border-yellow-500 w-16">중량</th>
-              <th class="py-2.5 px-2 text-center border-r border-yellow-500 min-w-[70px]">운송사</th>
-              <th class="py-2.5 px-2 text-center border-r border-yellow-500 min-w-[70px]">선적지</th>
-              <th class="py-2.5 px-2 text-center border-r border-yellow-500 w-16">CLS</th>
-              <th class="py-2.5 px-2 text-center border-r border-yellow-500 min-w-[70px]">쇼링</th>
-              <th class="py-2.5 px-2 text-center border-r border-yellow-500 min-w-[160px]">비 고</th>
-              <th class="py-2.5 px-2 text-center border-r border-yellow-500 min-w-[140px]">B/K NO.</th>
-              <th class="py-2.5 px-3 text-center border-r border-yellow-500 min-w-[130px]">담당자</th>
-              <th class="py-2.5 px-3 text-center border-r border-yellow-500 min-w-[140px]">작업 상태</th>
-              <th class="py-2.5 px-3 text-center min-w-[170px]">작업사진</th>
+              <th class="py-3 px-3 text-center w-12 border-r border-yellow-500">NO.</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[80px]">규격</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[150px]">CNTR#</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[140px]">SEAL NO.</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[180px]">화 주</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[100px]">ITEM</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[90px]">LINE</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[90px]">수량</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[90px]">중량</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[110px]">운송사</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[110px]">선적지</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[90px]">CLS</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[110px]">쇼링</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[200px]">비 고</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[160px]">B/K NO.</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[140px]">담당자</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[150px]">작업 상태</th>
+              <th class="py-3 px-3 text-center min-w-[180px]">작업사진</th>
             </tr>
           </thead>
-          <tbody id="export-table-body" class="divide-y divide-slate-200 font-medium text-[11px]">
+          <tbody id="export-table-body" class="divide-y divide-slate-200 font-medium text-xs">
             <tr>
               <td colspan="18" class="text-center py-12 text-slate-400 font-semibold">
                 우측 상단 톱니바퀴(⚙️) 버튼을 눌러 구글 Apps Script 웹 앱 URL을 입력해 주세요.
@@ -262,21 +262,15 @@
     </div>
   </div>
 
-  <!-- 사진 목록 및 일괄 다운로드 모달창 -->
+  <!-- 사진 목록 보기 모달창 (일괄 다운 버튼 삭제됨) -->
   <div id="photo-viewer-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4 z-50">
     <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
       <div class="flex justify-between items-center border-b pb-3">
-        <div class="flex items-center gap-3">
-          <h3 id="photo-modal-title" class="font-black text-slate-900 text-lg">작업 사진 목록</h3>
-          <!-- 전체 일괄 다운로드 버튼 -->
-          <button id="modal-bulk-download-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition shadow-sm flex items-center gap-1 cursor-pointer">
-            <i data-lucide="download" class="w-3.5 h-3.5"></i> 전체 일괄 다운로드
-          </button>
-        </div>
+        <h3 id="photo-modal-title" class="font-black text-slate-900 text-lg">작업 사진 목록</h3>
         <button onclick="closePhotoModal()" class="text-slate-400 hover:text-slate-600 p-1"><i data-lucide="x" class="w-6 h-6"></i></button>
       </div>
       <div id="photo-modal-list" class="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
-        <!-- 동적으로 리스트 생성 -->
+        <!-- 동적 리스트 생성 -->
       </div>
       <div class="flex justify-end pt-2 border-t">
         <button onclick="closePhotoModal()" class="px-5 py-2.5 bg-slate-800 text-white font-bold rounded-xl text-xs">닫기</button>
@@ -319,6 +313,7 @@
       recalculateDashboardCounts(data);
     });
 
+    // 오퍼레이터 대시보드 테이블 렌더링 (칸 길이 대폭 확장)
     function renderDashboardTable(data) {
       const tbody = document.getElementById('table-body');
       if (!tbody) return;
@@ -341,24 +336,24 @@
           <td class="py-3.5 px-3 text-center nowrap-cell"><button onclick="deleteDashboardRow('${key}')" class="bg-red-50 text-red-600 p-1.5 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
           <td class="py-3.5 px-4 text-center nowrap-cell">${typeStyle}</td>
           <td class="py-3.5 px-4 text-slate-500 nowrap-cell">${item.timeStr || '-'}</td>
-          <td class="py-3.5 px-4"><input type="text" value="${item.manager || ''}" onchange="updateFirebaseField('${key}', 'manager', this.value)" class="w-full bg-slate-50 border rounded px-2 py-1 text-xs"></td>
-          <td class="py-3.5 px-4 font-bold">${item.carNumber || ''}</td>
-          <td class="py-3.5 px-4 text-slate-500">${item.phoneNumber || ''}</td>
-          <td class="py-3.5 px-4"><input type="text" value="${item.clientName || ''}" onchange="updateFirebaseField('${key}', 'clientName', this.value)" class="w-full border rounded px-2 py-1 text-xs"></td>
+          <td class="py-3.5 px-4 min-w-[150px]"><input type="text" value="${item.manager || ''}" onchange="updateFirebaseField('${key}', 'manager', this.value)" class="w-full bg-slate-50 border rounded px-2.5 py-1.5 text-xs font-bold"></td>
+          <td class="py-3.5 px-4 font-bold min-w-[130px] nowrap-cell">${item.carNumber || ''}</td>
+          <td class="py-3.5 px-4 text-slate-500 min-w-[140px] nowrap-cell">${item.phoneNumber || ''}</td>
+          <td class="py-3.5 px-4 min-w-[180px]"><input type="text" value="${item.clientName || ''}" onchange="updateFirebaseField('${key}', 'clientName', this.value)" class="w-full border rounded px-2.5 py-1.5 text-xs"></td>
           <td class="py-3.5 px-4 text-center font-bold text-blue-600">${item.quantity || 0}</td>
-          <td class="py-3.5 px-4"><input type="text" value="${item.note || ''}" onchange="updateFirebaseField('${key}', 'note', this.value)" class="w-full bg-slate-50 border rounded px-2 py-1 text-xs"></td>
-          <td class="py-3.5 px-4 text-center">
-            <select onchange="updateDashboardStatus('${key}', this.value)" class="border rounded px-2 py-1 text-xs font-bold">
+          <td class="py-3.5 px-4 min-w-[220px]"><input type="text" value="${item.note || ''}" onchange="updateFirebaseField('${key}', 'note', this.value)" class="w-full bg-slate-50 border rounded px-2.5 py-1.5 text-xs"></td>
+          <td class="py-3.5 px-4 text-center min-w-[130px]">
+            <select onchange="updateDashboardStatus('${key}', this.value)" class="border rounded px-2.5 py-1.5 text-xs font-bold">
               <option value="WAITING" ${item.status === 'WAITING' ? 'selected' : ''}>접수완료</option>
               <option value="IN_PROGRESS" ${item.status === 'IN_PROGRESS' ? 'selected' : ''}>작업 중</option>
               <option value="COMPLETED" ${item.status === 'COMPLETED' ? 'selected' : ''}>작업 완료</option>
             </select>
           </td>
-          <td class="py-3.5 px-4 photo-cell nowrap-cell">
+          <td class="py-3.5 px-4 photo-cell nowrap-cell min-w-[180px]">
             <div class="photo-btn-group ${photoGroupClass} flex flex-col gap-1.5">
               <div class="flex items-center gap-1.5">
-                <label class="cursor-pointer bg-blue-600 text-white text-xs px-2.5 py-1 rounded font-medium">사진 1<input type="file" accept="image/*" multiple class="hidden" onchange="handleMultiplePhotos(event, 1)"></label>
-                <label class="cursor-pointer bg-indigo-600 text-white text-xs px-2.5 py-1 rounded font-medium">사진 2<input type="file" accept="image/*" multiple class="hidden" onchange="handleMultiplePhotos(event, 2)"></label>
+                <label class="cursor-pointer bg-blue-600 text-white text-xs px-2.5 py-1.5 rounded font-medium">사진 1<input type="file" accept="image/*" multiple class="hidden" onchange="handleMultiplePhotos(event, 1)"></label>
+                <label class="cursor-pointer bg-indigo-600 text-white text-xs px-2.5 py-1.5 rounded font-medium">사진 2<input type="file" accept="image/*" multiple class="hidden" onchange="handleMultiplePhotos(event, 2)"></label>
               </div>
               <div class="photo-preview-list text-[11px]"></div>
             </div>
@@ -410,7 +405,7 @@
 
     function switchTab(tabName) {
       ['dashboard', 'export', 'kiosk'].forEach(t => {
-        document.getElementById(`tab-${t}`).className = (t === tabName) ? "max-w-7xl mx-auto px-4 py-6 space-y-6 block" : "hidden";
+        document.getElementById(`tab-${t}`).className = (t === tabName) ? (t === 'dashboard' ? "max-w-[98%] mx-auto px-4 py-6 space-y-6 block" : "max-w-full w-[98%] mx-auto px-4 py-6 space-y-6 block") : "hidden";
         const btn = document.getElementById(`nav-${t}-btn`);
         if (btn) btn.className = (t === tabName) ? "px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition bg-blue-600 text-white shadow-sm" : "px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-700/50 transition";
       });
@@ -496,7 +491,7 @@
           <div class="flex items-center justify-between font-bold text-slate-700 bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-300 shadow-sm">
             <span class="text-emerald-700 text-[11px]">[${btnLabel}] ${files.length}장 저장됨</span>
             <button onclick='showPhotoModal(${JSON.stringify(uploadedUrls)}, "${identifier} - ${btnLabel}")' class="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] px-2.5 py-1 rounded transition flex items-center gap-1 cursor-pointer">
-              일괄 다운
+              사진 보기
             </button>
           </div>
         `;
@@ -511,27 +506,19 @@
       inputEl.value = '';
     }
 
+    // 사진 보기 팝업 모달창 (일괄 다운로드 버튼 제거됨)
     function showPhotoModal(urls, titleText) {
       const modal = document.getElementById('photo-viewer-modal');
       const titleEl = document.getElementById('photo-modal-title');
       const listEl = document.getElementById('photo-modal-list');
-      const bulkBtn = document.getElementById('modal-bulk-download-btn');
 
       titleEl.innerText = `[${titleText}] 작업 사진 목록 (${urls.length}장)`;
       listEl.innerHTML = '';
-
-      // ★ 오른쪽 위 전체 일괄 다운로드 클릭 시 순차적으로 강제 다운로드 실행
-      bulkBtn.onclick = function() {
-        urls.forEach((url, idx) => {
-          forceDownloadImage(url, `Photo_${idx + 1}.jpg`);
-        });
-      };
 
       urls.forEach((url, index) => {
         const item = document.createElement('div');
         item.className = "flex items-center justify-between bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-xs font-bold";
         
-        // 구글 드라이브 뷰어 링크를 실제 이미지 다운로드 직접 링크(export=download)로 변환
         let directUrl = url;
         if (url.includes('drive.google.com') && url.includes('/d/')) {
           const fileIdMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
@@ -543,8 +530,8 @@
         item.innerHTML = `
           <span class="text-slate-700">작업 사진 #${index + 1}</span>
           <div class="flex gap-1.5">
-            <a href="${url}" target="_blank" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded-lg transition">새창 보기</a>
-            <button onclick="forceDownloadImage('${directUrl}', 'Photo_${index + 1}.jpg')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded-lg transition cursor-pointer">다운로드</button>
+            <a href="${url}" target="_blank" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg transition">새창 보기</a>
+            <button onclick="forceDownloadImage('${directUrl}', 'Photo_${index + 1}.jpg')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg transition cursor-pointer">다운로드</button>
           </div>
         `;
         listEl.appendChild(item);
@@ -554,7 +541,6 @@
       lucide.createIcons();
     }
 
-    // ★ [핵심 완벽 수정] 구글 드라이브 원본 파일(3MB 이상)을 121KB로 깨지지 않고 온전한 원본 그대로 다운로드하는 로직
     async function forceDownloadImage(url, filename) {
       try {
         let downloadUrl = url;
@@ -568,7 +554,6 @@
         const response = await fetch(downloadUrl);
         const blob = await response.blob();
         
-        // 만약 권한 거부 등으로 HTML 조각(121KB 미만)이 받아졌다면 직접 새창 다운로드로 우회
         if (blob.type.includes('text/html') || blob.size < 150000) {
           window.open(downloadUrl, '_blank');
           return;
@@ -615,6 +600,7 @@
       document.body.appendChild(script);
     }
 
+    // 수출 현황판 테이블 렌더링 (입력 칸 큼직하게 확장)
     function renderExportTable(rows) {
       const tbody = document.getElementById('export-table-body');
       if (!tbody) return;
@@ -628,38 +614,38 @@
         const tr = document.createElement('tr');
         tr.className = "hover:bg-slate-50 transition";
         tr.innerHTML = `
-          <td class="py-2.5 px-2 text-center bg-green-100/60 border-r font-bold">${row[0] || (idx + 1)}</td>
-          <td class="py-2.5 px-2 border-r"><input type="text" value="${row[1] || ''}" class="w-full text-center border rounded px-1 py-1 text-xs"></td>
-          <td class="py-2.5 px-2 border-r"><input type="text" value="${row[2] || ''}" class="w-full text-center border rounded px-1 py-1 text-xs font-bold"></td>
-          <td class="py-2.5 px-2 border-r"><input type="text" value="${row[3] || ''}" class="w-full text-center border rounded px-1 py-1 text-xs"></td>
-          <td class="py-2.5 px-2 border-r"><input type="text" value="${row[4] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs font-bold"></td>
-          <td class="py-2.5 px-2 border-r"><input type="text" value="${row[5] || ''}" class="w-full text-center border rounded px-1 py-1 text-xs"></td>
-          <td class="py-2.5 px-2 border-r"><input type="text" value="${row[6] || ''}" class="w-full text-center border rounded px-1 py-1 text-xs"></td>
-          <td class="py-2.5 px-2 border-r"><input type="text" value="${row[7] || ''}" class="w-full text-center border rounded px-1 py-1 text-xs font-bold"></td>
-          <td class="py-2.5 px-2 border-r"><input type="text" value="${row[8] || ''}" class="w-full text-center border rounded px-1 py-1 text-xs"></td>
-          <td class="py-2.5 px-2 border-r"><input type="text" value="${row[9] || ''}" class="w-full text-center border rounded px-1 py-1 text-xs"></td>
-          <td class="py-2.5 px-2 border-r"><input type="text" value="${row[10] || ''}" class="w-full text-center border rounded px-1 py-1 text-xs"></td>
-          <td class="py-2.5 px-2 border-r"><input type="text" value="${row[11] || ''}" class="w-full text-center border rounded px-1 py-1 text-xs"></td>
-          <td class="py-2.5 px-2 border-r"><input type="text" value="${row[12] || ''}" class="w-full text-center border rounded px-1 py-1 text-xs"></td>
-          <td class="py-2.5 px-2 border-r"><input type="text" value="${row[13] || ''}" class="w-full text-center border rounded px-1 py-1 text-xs"></td>
-          <td class="py-2.5 px-2 border-r"><input type="text" value="${row[14] || ''}" class="w-full text-center border rounded px-1 py-1 text-xs font-bold"></td>
-          <td class="py-2.5 px-3 border-r min-w-[130px]"><input type="text" value="${row[15] || ''}" class="w-full text-center bg-slate-50 border rounded px-2 py-1 text-xs font-bold"></td>
-          <td class="py-2.5 px-3 border-r min-w-[140px]">
-            <select class="export-status-select w-full border bg-white text-slate-700 font-bold rounded-lg px-2.5 py-1.5 text-xs outline-none cursor-pointer">
+          <td class="py-3 px-3 text-center bg-green-100/60 border-r font-bold text-sm">${row[0] || (idx + 1)}</td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[1] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[2] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[3] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[4] || ''}" class="w-full border rounded px-2.5 py-1.5 text-xs font-bold"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[5] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[6] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[7] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[8] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[9] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[10] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[11] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[12] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[13] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[14] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold"></td>
+          <td class="py-3 px-3 border-r min-w-[140px]"><input type="text" value="${row[15] || ''}" class="w-full text-center bg-slate-50 border rounded px-2.5 py-1.5 text-xs font-bold"></td>
+          <td class="py-3 px-3 border-r min-w-[150px]">
+            <select class="export-status-select w-full border bg-white text-slate-700 font-bold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer">
               <option value="NONE" selected>선택 안함</option>
               <option value="TALLY">TALLY완료</option>
               <option value="VANNING">적입중</option>
               <option value="DONE">작업완료</option>
             </select>
           </td>
-          <td class="py-2.5 px-3 min-w-[170px]">
+          <td class="py-3 px-3 min-w-[180px]">
             <div class="export-photo-btn-group hidden">
               <div class="flex flex-col gap-1.5">
                 <div class="flex items-center gap-1.5">
-                  <label class="cursor-pointer bg-blue-600 text-white text-xs px-2 py-1 rounded font-medium">사진 1<input type="file" accept="image/*" multiple class="hidden" onchange="handleMultiplePhotos(event, 1)"></label>
-                  <label class="cursor-pointer bg-indigo-600 text-white text-xs px-2 py-1 rounded font-medium">사진 2<input type="file" accept="image/*" multiple class="hidden" onchange="handleMultiplePhotos(event, 2)"></label>
+                  <label class="cursor-pointer bg-blue-600 text-white text-xs px-2.5 py-2 rounded font-medium">사진 1<input type="file" accept="image/*" multiple class="hidden" onchange="handleMultiplePhotos(event, 1)"></label>
+                  <label class="cursor-pointer bg-indigo-600 text-white text-xs px-2.5 py-2 rounded font-medium">사진 2<input type="file" accept="image/*" multiple class="hidden" onchange="handleMultiplePhotos(event, 2)"></label>
                 </div>
-                <div class="photo-preview-list text-[10px] space-y-0.5"></div>
+                <div class="photo-preview-list text-[11px] space-y-0.5"></div>
               </div>
             </div>
             <span class="export-default-photo-text text-slate-400 text-center block text-xs">-</span>
@@ -681,11 +667,11 @@
         if (selectElement.value === 'DONE' || selectElement.value === '작업완료') {
           if (photoGroup) photoGroup.classList.remove('hidden');
           if (defaultText) defaultText.classList.add('hidden');
-          selectElement.className = "export-status-select w-full border border-emerald-300 bg-emerald-50 text-emerald-900 font-extrabold rounded-lg px-2.5 py-1.5 text-xs outline-none cursor-pointer";
+          selectElement.className = "export-status-select w-full border border-emerald-300 bg-emerald-50 text-emerald-900 font-extrabold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer";
         } else {
           if (photoGroup) photoGroup.classList.add('hidden');
           if (defaultText) defaultText.classList.remove('hidden');
-          selectElement.className = "export-status-select w-full border border-slate-200 bg-white text-slate-700 font-bold rounded-lg px-2.5 py-1.5 text-xs outline-none cursor-pointer";
+          selectElement.className = "export-status-select w-full border border-slate-200 bg-white text-slate-700 font-bold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer";
         }
       }
     });
