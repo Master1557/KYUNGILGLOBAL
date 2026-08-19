@@ -52,10 +52,8 @@
       </button>
     </div>
 
+    <!-- 우측 상단 '연결 중...' 뱃지 삭제 완료 및 설정 버튼만 배치 -->
     <div class="flex items-center gap-2">
-      <span id="db-status-badge" class="text-xs bg-slate-800 text-slate-400 px-2.5 py-1 rounded-full font-bold flex items-center gap-1">
-        <span class="w-2 h-2 rounded-full bg-amber-400"></span> 연결 중...
-      </span>
       <button onclick="openSettingsModal()" class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition" title="환경설정">
         <i data-lucide="settings" class="w-5 h-5"></i>
       </button>
@@ -123,7 +121,8 @@
           <h2 class="font-bold text-slate-800 text-lg">수출작업 예정 현황 (구글 시트 연동)</h2>
           <span id="sync-status-badge" class="text-xs text-yellow-800 ml-2 bg-yellow-300 px-2.5 py-1 rounded-full font-bold">대기 중</span>
         </div>
-        <button onclick="refreshData()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition shadow-sm">
+        <!-- ★ 실시간 동기화 버튼 누르면 페이지 새로고침(location.reload) 실행 -->
+        <button onclick="location.reload()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition shadow-sm cursor-pointer">
           <i data-lucide="rotate-cw" class="w-4 h-4"></i> 실시간 동기화
         </button>
       </div>
@@ -599,9 +598,8 @@
       document.body.appendChild(script);
     }
 
-    // 쇼링별 전화번호 매핑 딕셔너리
     const shoringPhoneMap = {
-      "SH": "010-8377-8779",
+      "SH": "010-6246-8672",
       "로케트": "051-442-0058",
       "로켓트": "051-442-0058",
       "하람": "010-9419-2245",
@@ -631,7 +629,6 @@
       return null;
     }
 
-    // 수출 현황판 테이블 렌더링 (쇼링 조건 체크 포함)
     function renderExportTable(rows) {
       const tbody = document.getElementById('export-table-body');
       if (!tbody) return;
@@ -642,7 +639,7 @@
       }
 
       rows.forEach((row, idx) => {
-        const shoringVal = (row[12] || '').toString().trim(); // 쇼링 열 (인덱스 12)
+        const shoringVal = (row[12] || '').toString().trim();
         const tr = document.createElement('tr');
         tr.className = "hover:bg-slate-50 transition";
         
@@ -651,14 +648,14 @@
           <td class="py-3 px-3 border-r"><input type="text" value="${row[1] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[2] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[3] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[4] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold"></td> <!-- 화주 -->
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[4] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[5] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[6] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[7] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[8] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[11] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs"></td> <!-- CLS -->
-          <td class="py-3 px-3 border-r"><input type="text" value="${shoringVal}" class="shoring-input w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" oninput="updateRowCondition(this)"></td> <!-- 쇼링 -->
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[13] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs"></td> <!-- 비고 -->
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[11] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${shoringVal}" class="shoring-input w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" oninput="updateRowCondition(this)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[13] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[14] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold"></td>
           <td class="py-3 px-3 border-r min-w-[140px]"><input type="text" value="${row[15] || ''}" class="w-full text-center bg-slate-50 border rounded px-2.5 py-1.5 text-xs font-bold"></td>
           <td class="py-3 px-3 border-r min-w-[150px]">
@@ -670,16 +667,12 @@
             </select>
           </td>
           <td class="py-3 px-3 min-w-[210px] text-center">
-            <!-- 기본 상태 (-) -->
             <span class="export-default-text text-slate-400 block text-xs">-</span>
-            <!-- 적입중 & 쇼링 조건 만족 시 뜨는 전화번호 텍스트 -->
             <div class="export-phone-display hidden font-black text-blue-600 text-sm bg-blue-50 py-1.5 rounded-lg border border-blue-200">
             </div>
-            <!-- X일 때 뜨는 안내 문구 -->
             <div class="export-x-display hidden font-bold text-amber-700 text-[11px] bg-amber-50 py-1.5 px-2 rounded-lg border border-amber-200 leading-tight">
               쇼링 X 씰 채결부탁드려요
             </div>
-            <!-- 작업 완료 시 뜨는 사진 버튼 그룹 -->
             <div class="export-photo-btn-group hidden">
               <div class="flex flex-col gap-1.5">
                 <div class="flex items-center gap-1.5">
@@ -696,7 +689,6 @@
       lucide.createIcons();
     }
 
-    // 상태 변경 또는 쇼링 입력 시 동적으로 조건 체크하여 번호 또는 씰 채결 안내 표시
     function updateRowCondition(element) {
       const row = element.closest('tr');
       if (!row) return;
@@ -716,14 +708,12 @@
       if (xDisplay) xDisplay.classList.add('hidden');
       if (photoGroup) photoGroup.classList.add('hidden');
 
-      // 1. 쇼링이 X인 경우 (대소문자 무관)
       if (shoringVal.toUpperCase() === 'X') {
         if (xDisplay) xDisplay.classList.remove('hidden');
         selectEl.className = "export-status-select w-full border border-amber-300 bg-amber-50 text-amber-900 font-extrabold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer";
         return;
       }
 
-      // 2. 적입중(VANNING) 상태일 때 쇼링 매핑 번호 표시
       if (statusVal === 'VANNING') {
         const matchedPhone = getPhoneNumberByShoring(shoringVal);
         if (matchedPhone) {
@@ -736,14 +726,12 @@
         }
       }
 
-      // 3. 작업완료(DONE) 상태일 때 사진 업로드 그룹 표시
       if (statusVal === 'DONE' || statusVal === '작업완료') {
         if (photoGroup) photoGroup.classList.remove('hidden');
         selectEl.className = "export-status-select w-full border border-emerald-300 bg-emerald-50 text-emerald-900 font-extrabold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer";
         return;
       }
 
-      // 그 외 기본 상태
       if (defaultText) defaultText.classList.remove('hidden');
       selectEl.className = "export-status-select w-full border border-slate-200 bg-white text-slate-700 font-bold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer";
     }
