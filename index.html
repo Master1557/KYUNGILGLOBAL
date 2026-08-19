@@ -549,7 +549,7 @@
       });
     }
 
-    // [중요 수정됨] 구글 드라이브(Apps Script) 업로드 처리 함수 (보안 리다이렉트 허용 추가)
+    // [보안 차단 완전 우회] 폼 데이터 형식으로 구글 드라이브 업로드 처리
     async function handleMultiplePhotos(event, btnIndex) {
       const files = event.target.files;
       if (files.length === 0) return;
@@ -564,7 +564,6 @@
         return;
       }
 
-      // 구분을 위한 식별자 (Export 탭이면 CNTR#, 대시보드면 차량번호 추출)
       let identifier = '사진';
       let cntrInput = row.children[2]?.querySelector('input');
       let carNoCell = row.children[4];
@@ -577,28 +576,24 @@
       
       const fileName = `Export_${identifier}_${Date.now()}_${file.name}`;
 
-      // 로딩 UI 표시
       const loadingBadge = document.createElement('div');
       loadingBadge.className = "flex items-center gap-1 font-semibold text-amber-700 bg-amber-100 px-2 py-1.5 rounded border border-amber-200 mt-1";
-      loadingBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> 드라이브 업로드 중...`;
+      loadingBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> 업로드 중... (시간이 조금 걸릴 수 있습니다)`;
       previewList.appendChild(loadingBadge);
 
       try {
         const base64Data = await getBase64(file);
 
-        // Apps Script로 파일 텍스트 전송
+        // ★ 핵심 변경 포인트: JSON 대신 폼 데이터(URLSearchParams) 형식으로 전송하여 CORS 차단 완벽 우회
+        const formData = new URLSearchParams();
+        formData.append('action', 'uploadPhoto');
+        formData.append('fileName', fileName);
+        formData.append('mimeType', file.type);
+        formData.append('data', base64Data);
+
         const response = await fetch(webAppUrl, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'text/plain;charset=utf-8'
-          },
-          redirect: 'follow', // ★ 구글의 보안 리다이렉트를 허용하여 에러를 막아주는 필수 코드입니다.
-          body: JSON.stringify({
-            action: 'uploadPhoto',
-            fileName: fileName,
-            mimeType: file.type,
-            data: base64Data
-          })
+          body: formData // Content-Type이 자동으로 application/x-www-form-urlencoded 로 설정되어 차단되지 않음
         });
 
         const result = await response.json();
@@ -627,7 +622,7 @@
         console.error("사진 업로드 실패:", error);
         loadingBadge.className = "flex items-center gap-1 font-semibold text-red-700 bg-red-100 px-2 py-1.5 rounded border border-red-200 mt-1 text-[11px]";
         loadingBadge.innerHTML = `업로드 실패`;
-        alert("업로드 실패: Apps Script 설정 또는 구글 드라이브 권한을 확인해주세요.");
+        alert("업로드 실패: 계속 막힌다면 파일 용량이 너무 크거나 구글 보안 차단일 수 있습니다. (" + error.message + ")");
       }
     }
 
