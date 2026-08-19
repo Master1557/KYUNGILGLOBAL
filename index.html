@@ -171,7 +171,6 @@
         <h1 class="text-2xl font-black text-white tracking-tight">경일글로벌 입/출고 접수 키오스크</h1>
         <p class="text-slate-400 text-sm mt-1 mb-4">기사님 접수를 위해 아래 정보를 입력해 주세요.</p>
         
-        <!-- 현재 대기순번 (오퍼레이터 대시보드 대기중 개수 연동) -->
         <div class="bg-slate-900 border border-blue-500/40 rounded-2xl p-4 max-w-sm mx-auto shadow-inner">
           <p class="text-xs text-blue-400 font-bold mb-1">현재 대기순번</p>
           <p class="text-3xl font-black text-amber-400 tracking-tight"><span id="kiosk-header-queue-count">0</span><span class="text-lg text-slate-300 font-bold ml-1">번째</span></p>
@@ -205,7 +204,6 @@
 
         <div>
           <label class="block text-sm font-bold text-slate-300 mb-2">전화번호 *</label>
-          <!-- 숫자만 입력 가능 + 자동 하이픈 포맷 적용 -->
           <input type="tel" id="phone-number" required maxlength="13" placeholder="EX. 010-0000-0000" oninput="formatPhoneNumber(this)" class="w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-4 text-lg text-white font-semibold outline-none focus:border-blue-500">
         </div>
 
@@ -231,7 +229,6 @@
       
       <div class="bg-slate-900 border border-blue-500/30 rounded-2xl p-4 my-2">
         <p class="text-slate-400 text-xs mb-1">현재 기사님의 순번</p>
-        <!-- 접수 완료 시 대기중 개수 + 1 표시 -->
         <p class="text-3xl font-black text-amber-400"><span id="modal-queue-order-number">0</span>번째</p>
       </div>
 
@@ -302,7 +299,7 @@
     let autoCloseTimer = null;
     let clientManagerMap = {};
     let localDataMap = {};
-    let currentWaitingCount = 0; // 대기중 개수 저장용 변수
+    let currentWaitingCount = 0;
 
     lucide.createIcons();
 
@@ -378,7 +375,6 @@
       document.getElementById('count-completed').innerText = completed;
       document.getElementById('nav-badge').innerText = total;
 
-      // 키오스크 화면의 현재 대기순번 업데이트 (대기 중 개수)
       currentWaitingCount = waiting;
       const kioskHeaderQueue = document.getElementById('kiosk-header-queue-count');
       if (kioskHeaderQueue) {
@@ -400,7 +396,6 @@
         workType, timeStr, manager: "미정", carNumber, phoneNumber, clientName, quantity,
         note: "키오스크 신규 접수", status: "WAITING", timestamp: firebase.database.ServerValue.TIMESTAMP
       }).then(() => {
-        // 접수 완료 시 모달창에 (대기중 개수 + 1)번째 표시
         document.getElementById('modal-queue-order-number').innerText = currentWaitingCount + 1;
         document.getElementById('kiosk-success-modal').classList.remove('hidden');
 
@@ -432,21 +427,13 @@
       closeSettingsModal();
       fetchSheetData(url);
     }
-
-    // 모달 닫을 때 키오스크 모드면 키오스크 화면 유지, 아니면 대시보드로 이동
     function closeKioskSuccessModal() {
       if (autoCloseTimer) { clearTimeout(autoCloseTimer); autoCloseTimer = null; }
       document.getElementById('kiosk-success-modal').classList.add('hidden');
       document.getElementById('kiosk-form').reset();
-      
-      if (isKioskOnlyMode) {
-        switchTab('kiosk');
-      } else {
-        switchTab('kiosk'); // 요청하신 대로 접수 후 키오스크 화면 유지
-      }
+      switchTab('kiosk');
     }
 
-    // 전화번호 입력 시 숫자만 추출하여 자동으로 010-0000-0000 형태로 포맷팅
     function formatPhoneNumber(input) {
       let val = input.value.replace(/\D/g, '');
       let formatted = '';
@@ -705,11 +692,9 @@
           </td>
           <td class="py-3 px-3 min-w-[210px] text-center">
             <span class="export-default-text text-slate-400 block text-xs">-</span>
-            <div class="export-phone-display hidden font-black text-blue-600 text-sm bg-blue-50 py-1.5 rounded-lg border border-blue-200">
-            </div>
-            <div class="export-x-display hidden font-bold text-amber-700 text-[11px] bg-amber-50 py-1.5 px-2 rounded-lg border border-amber-200 leading-tight">
-              쇼링 X 씰 채결부탁드려요
-            </div>
+            <div class="export-phone-display hidden font-black text-blue-600 text-sm bg-blue-50 py-1.5 rounded-lg border border-blue-200"></div>
+            <div class="export-x-display hidden font-bold text-amber-700 text-[11px] bg-amber-50 py-1.5 px-2 rounded-lg border border-amber-200 leading-tight">쇼링 X 씰 채결부탁드려요</div>
+            <!-- ★ 작업완료 시 사진 업로드 버튼 그룹 복구 완료 -->
             <div class="export-photo-btn-group hidden">
               <div class="flex flex-col gap-1.5">
                 <div class="flex items-center gap-1.5">
