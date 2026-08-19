@@ -101,7 +101,7 @@
               <th class="py-3.5 px-4 text-center nowrap-cell min-w-[80px]">수량</th>
               <th class="py-3.5 px-4 min-w-[220px] nowrap-cell">비고</th>
               <th class="py-3.5 px-4 text-center min-w-[130px] nowrap-cell">상태</th>
-              <th class="py-3.5 px-4 min-w-[180px] nowrap-cell">작업사진</th>
+              <th class="py-3.5 px-4 min-w-[180px] nowrap-cell">작업사진 & 쇼링번호</th>
             </tr>
           </thead>
           <tbody id="table-body" class="divide-y divide-slate-100 font-medium">
@@ -114,7 +114,7 @@
     </div>
   </main>
 
-  <!-- TAB 2: Export Status Board (운송사, 선적지 제거 및 화주, 비고 대폭 확장) -->
+  <!-- TAB 2: Export Status Board -->
   <main id="tab-export" class="max-w-full w-[98%] mx-auto px-4 py-6 space-y-6 hidden export-fit-container">
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
       <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-yellow-400/20">
@@ -136,19 +136,18 @@
               <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[80px]">규격</th>
               <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[140px]">CNTR#</th>
               <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[130px]">SEAL NO.</th>
-              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[260px]">화 주</th> <!-- 화주 칸 대폭 확장 -->
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[260px]">화 주</th>
               <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[90px]">ITEM</th>
               <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[90px]">LINE</th>
               <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[80px]">수량</th>
               <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[80px]">중량</th>
-              <!-- 운송사, 선적지 열 삭제됨 -->
               <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[80px]">CLS</th>
-              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[100px]">쇼링</th>
-              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[260px]">비 고</th> <!-- 비고 칸 대폭 확장 -->
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[100px]" id="shoring-header">쇼링</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[260px]">비 고</th>
               <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[150px]">B/K NO.</th>
               <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[130px]">담당자</th>
               <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[140px]">작업 상태</th>
-              <th class="py-3 px-3 text-center min-w-[170px]">작업사진</th>
+              <th class="py-3 px-3 text-center min-w-[200px]">작업사진 & 쇼링번호</th> <!-- 열 이름 변경됨 -->
             </tr>
           </thead>
           <tbody id="export-table-body" class="divide-y divide-slate-200 font-medium text-xs">
@@ -600,7 +599,7 @@
       document.body.appendChild(script);
     }
 
-    // 수출 현황판 테이블 렌더링 (운송사, 선적지 열 제거 및 화주, 비고 대폭 확장)
+    // 수출 현황판 테이블 렌더링 (운송사, 선적지 열 제거 및 쇼링=SH & 적입중 조건 시 전화번호 표시 로직 추가)
     function renderExportTable(rows) {
       const tbody = document.getElementById('export-table-body');
       if (!tbody) return;
@@ -611,33 +610,42 @@
       }
 
       rows.forEach((row, idx) => {
+        const shoringVal = (row[12] || '').toString().trim().toUpperCase(); // 쇼링 열 데이터 (인덱스 12)
         const tr = document.createElement('tr');
         tr.className = "hover:bg-slate-50 transition";
+        
         tr.innerHTML = `
           <td class="py-3 px-3 text-center bg-green-100/60 border-r font-bold text-sm">${row[0] || (idx + 1)}</td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[1] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[2] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[3] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[4] || ''}" class="w-full border rounded px-2.5 py-1.5 text-xs font-bold"></td> <!-- 화주 -->
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[5] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[6] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[5] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[6] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[7] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[8] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs"></td>
-          <!-- row[9](운송사), row[10](선적지) 데이터 건너뜀 -->
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[11] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[12] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[13] || ''}" class="w-full border rounded px-2.5 py-1.5 text-xs"></td> <!-- 비고 -->
+          <!-- 운송사(row[9]), 선적지(row[10]) 삭제됨 -->
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[11] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs"></td> <!-- CLS -->
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[12] || ''}" class="shoring-input w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" data-shoring="${shoringVal}"></td> <!-- 쇼링 -->
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[13] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs"></td> <!-- 비고 -->
           <td class="py-3 px-3 border-r"><input type="text" value="${row[14] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold"></td>
           <td class="py-3 px-3 border-r min-w-[140px]"><input type="text" value="${row[15] || ''}" class="w-full text-center bg-slate-50 border rounded px-2.5 py-1.5 text-xs font-bold"></td>
           <td class="py-3 px-3 border-r min-w-[150px]">
-            <select class="export-status-select w-full border bg-white text-slate-700 font-bold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer">
-              <option value="NONE" selected>선택 안함</option>
+            <select class="export-status-select w-full border bg-white text-slate-700 font-bold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer" data-shoring="${shoringVal}">
+              <option value="NONE">선택 안함</option>
               <option value="TALLY">TALLY완료</option>
               <option value="VANNING">적입중</option>
               <option value="DONE">작업완료</option>
             </select>
           </td>
           <td class="py-3 px-3 min-w-[180px]">
+            <!-- 기본 상태 (비활성) -->
+            <span class="export-default-text text-slate-400 text-center block text-xs">-</span>
+            <!-- 적입중 & 쇼링 SH 조건 만족 시 뜨는 번호 텍스트 -->
+            <div class="export-phone-display hidden text-center font-black text-blue-600 text-sm bg-blue-50 py-1.5 rounded-lg border border-blue-200">
+              010-6246-8672
+            </div>
+            <!-- 작업 완료 시 뜨는 사진 버튼 그룹 -->
             <div class="export-photo-btn-group hidden">
               <div class="flex flex-col gap-1.5">
                 <div class="flex items-center gap-1.5">
@@ -647,7 +655,6 @@
                 <div class="photo-preview-list text-[11px] space-y-0.5"></div>
               </div>
             </div>
-            <span class="export-default-photo-text text-slate-400 text-center block text-xs">-</span>
           </td>
         `;
         tbody.appendChild(tr);
@@ -655,20 +662,36 @@
       lucide.createIcons();
     }
 
+    // 작업 상태(적입중) 및 쇼링(SH) 조건 실시간 감지하여 전화번호 표시 제어
     document.addEventListener('change', function(e) {
       if (e.target && e.target.classList.contains('export-status-select')) {
         const selectElement = e.target;
         const row = selectElement.closest('tr');
         if (!row) return;
-        const photoGroup = row.querySelector('.export-photo-btn-group');
-        const defaultText = row.querySelector('.export-default-photo-text');
 
-        if (selectElement.value === 'DONE' || selectElement.value === '작업완료') {
+        const shoringInput = row.querySelector('.shoring-input');
+        const shoringVal = shoringInput ? shoringInput.value.trim().toUpperCase() : '';
+        const statusVal = selectElement.value;
+
+        const defaultText = row.querySelector('.export-default-text');
+        const phoneDisplay = row.querySelector('.export-phone-display');
+        const photoGroup = row.querySelector('.export-photo-btn-group');
+
+        // 초기화
+        if (defaultText) defaultText.classList.add('hidden');
+        if (phoneDisplay) phoneDisplay.classList.add('hidden');
+        if (photoGroup) photoGroup.classList.add('hidden');
+
+        // 조건: 작업 상태가 '적입중(VANNING)'이고 쇼링 값이 'SH'인 경우
+        if (statusVal === 'VANNING' && shoringVal === 'SH') {
+          if (phoneDisplay) phoneDisplay.classList.remove('hidden');
+          selectElement.className = "export-status-select w-full border border-blue-300 bg-blue-50 text-blue-900 font-extrabold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer";
+        } 
+        else if (statusVal === 'DONE' || statusVal === '작업완료') {
           if (photoGroup) photoGroup.classList.remove('hidden');
-          if (defaultText) defaultText.classList.add('hidden');
           selectElement.className = "export-status-select w-full border border-emerald-300 bg-emerald-50 text-emerald-900 font-extrabold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer";
-        } else {
-          if (photoGroup) photoGroup.classList.add('hidden');
+        } 
+        else {
           if (defaultText) defaultText.classList.remove('hidden');
           selectElement.className = "export-status-select w-full border border-slate-200 bg-white text-slate-700 font-bold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer";
         }
