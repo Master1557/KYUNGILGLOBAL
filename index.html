@@ -549,7 +549,7 @@
       });
     }
 
-    // [수정됨] 구글 드라이브(Apps Script) 업로드 처리 함수
+    // 구글 드라이브(Apps Script) 업로드 처리 함수
     async function handleMultiplePhotos(event, btnIndex) {
       const files = event.target.files;
       if (files.length === 0) return;
@@ -680,7 +680,7 @@
       document.body.appendChild(script);
     }
 
-    // Export 탭 테이블 렌더링
+    // [완벽 수정본] Export 탭 테이블 렌더링
     function renderExportTable(rows) {
       const tbody = document.getElementById('export-table-body');
       if (!tbody) return;
@@ -722,7 +722,7 @@
           <td class="py-2.5 px-2 border-r border-slate-200"><input type="text" value="${row[14] || ''}" class="w-full text-center border border-slate-200 rounded px-1 py-1 text-xs font-bold outline-none focus:border-indigo-500"></td>
           <td class="py-2.5 px-3 border-r border-slate-200 min-w-[130px]"><input type="text" value="${row[15] || ''}" class="w-full text-center bg-slate-50 border border-slate-200 rounded px-2 py-1 text-xs font-bold outline-none focus:border-indigo-500"></td>
           <td class="py-2.5 px-3 border-r border-slate-200 min-w-[140px]">
-            <select onchange="handleExportStatusChange(this)" class="w-full border border-slate-200 bg-white text-slate-700 font-bold rounded-lg px-2.5 py-1.5 text-xs outline-none cursor-pointer">
+            <select class="export-status-select w-full border border-slate-200 bg-white text-slate-700 font-bold rounded-lg px-2.5 py-1.5 text-xs outline-none cursor-pointer">
               <option value="NONE" selected>선택 안함</option>
               <option value="TALLY">TALLY완료</option>
               <option value="VANNING">적입중</option>
@@ -730,20 +730,23 @@
             </select>
           </td>
           <td class="py-2.5 px-3 min-w-[170px]">
-            <div class="export-photo-btn-group flex-col gap-1.5" style="display: none;">
-              <div class="flex items-center gap-1.5">
-                <label class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white text-xs px-2 py-1 rounded font-medium flex items-center gap-1">
-                  <i data-lucide="camera" class="w-3.5 h-3.5"></i> 사진 1
-                  <input type="file" accept="image/*" class="hidden" onchange="handleMultiplePhotos(event, 1)">
-                </label>
-                <label class="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-2 py-1 rounded font-medium flex items-center gap-1">
-                  <i data-lucide="camera" class="w-3.5 h-3.5"></i> 사진 2
-                  <input type="file" accept="image/*" class="hidden" onchange="handleMultiplePhotos(event, 2)">
-                </label>
+            <!-- 오류 방지를 위해 대시보드와 동일한 구조 채택 -->
+            <div class="export-photo-btn-group hidden">
+              <div class="flex flex-col gap-1.5">
+                <div class="flex items-center gap-1.5">
+                  <label class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white text-xs px-2 py-1 rounded font-medium flex items-center gap-1">
+                    <i data-lucide="camera" class="w-3.5 h-3.5"></i> 사진 1
+                    <input type="file" accept="image/*" class="hidden" onchange="handleMultiplePhotos(event, 1)">
+                  </label>
+                  <label class="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-2 py-1 rounded font-medium flex items-center gap-1">
+                    <i data-lucide="camera" class="w-3.5 h-3.5"></i> 사진 2
+                    <input type="file" accept="image/*" class="hidden" onchange="handleMultiplePhotos(event, 2)">
+                  </label>
+                </div>
+                <div class="photo-preview-list text-[10px] space-y-0.5"></div>
               </div>
-              <div class="photo-preview-list text-[10px] space-y-0.5"></div>
             </div>
-            <span class="export-default-photo-text text-slate-400 text-center block text-xs" style="display: block;">-</span>
+            <span class="export-default-photo-text text-slate-400 text-center block text-xs">-</span>
           </td>
         `;
         tbody.appendChild(tr);
@@ -752,24 +755,29 @@
       lucide.createIcons();
     }
 
-    // 상태 변경 시 사진 업로드 버튼 토글
-    function handleExportStatusChange(selectElement) {
-      const row = selectElement.closest('tr');
-      if (!row) return;
+    // [핵심 변경] 브라우저 전체(document)에 이벤트를 걸어 상태 변경을 무조건 감지합니다.
+    document.addEventListener('change', function(e) {
+      if (e.target && e.target.classList.contains('export-status-select')) {
+        const selectElement = e.target;
+        const row = selectElement.closest('tr');
+        if (!row) return;
 
-      const photoGroup = row.querySelector('.export-photo-btn-group');
-      const defaultText = row.querySelector('.export-default-photo-text');
+        const photoGroup = row.querySelector('.export-photo-btn-group');
+        const defaultText = row.querySelector('.export-default-photo-text');
 
-      if (selectElement.value === 'DONE') {
-        if (photoGroup) photoGroup.style.display = 'flex';
-        if (defaultText) defaultText.style.display = 'none';
-        selectElement.className = "w-full border border-emerald-300 bg-emerald-50 text-emerald-900 font-extrabold rounded-lg px-2.5 py-1.5 text-xs outline-none cursor-pointer";
-      } else {
-        if (photoGroup) photoGroup.style.display = 'none';
-        if (defaultText) defaultText.style.display = 'block';
-        selectElement.className = "w-full border border-slate-200 bg-white text-slate-700 font-bold rounded-lg px-2.5 py-1.5 text-xs outline-none cursor-pointer";
+        if (selectElement.value === 'DONE' || selectElement.value === '작업완료') {
+          if (photoGroup) photoGroup.classList.remove('hidden');
+          if (defaultText) defaultText.classList.add('hidden');
+          
+          selectElement.className = "export-status-select w-full border border-emerald-300 bg-emerald-50 text-emerald-900 font-extrabold rounded-lg px-2.5 py-1.5 text-xs outline-none cursor-pointer";
+        } else {
+          if (photoGroup) photoGroup.classList.add('hidden');
+          if (defaultText) defaultText.classList.remove('hidden');
+          
+          selectElement.className = "export-status-select w-full border border-slate-200 bg-white text-slate-700 font-bold rounded-lg px-2.5 py-1.5 text-xs outline-none cursor-pointer";
+        }
       }
-    }
+    });
 
     function formatPhoneNumber(input) {
       let val = input.value.replace(/\D/g, '');
