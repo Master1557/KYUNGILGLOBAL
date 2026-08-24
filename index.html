@@ -120,7 +120,7 @@
           <h2 class="font-bold text-slate-800 text-lg">수출작업 예정 현황 (구글 시트 연동)</h2>
           <span id="sync-status-badge" class="text-xs text-yellow-800 ml-2 bg-yellow-300 px-2.5 py-1 rounded-full font-bold">대기 중</span>
         </div>
-        <button onclick="location.reload()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition shadow-sm cursor-pointer">
+        <button onclick="fetchSheetData(localStorage.getItem('sheetWebAppUrl'))" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition shadow-sm cursor-pointer">
           <i data-lucide="rotate-cw" class="w-4 h-4"></i> 실시간 동기화
         </button>
       </div>
@@ -621,7 +621,7 @@
       document.body.appendChild(script);
     }
 
-    // ★ 수출 현황판 셀 수정 시 구글 시트로 자동 저장하는 핵심 함수
+    // 수출 현황판 셀 수정 시 구글 시트로 자동 저장하는 함수
     async function updateExportSheetField(element, colIndex) {
       const webAppUrl = document.getElementById('sheet-url-input').value.trim();
       if (!webAppUrl) return;
@@ -743,7 +743,6 @@
         `;
         tbody.appendChild(tr);
         
-        // 데이터 행 내의 드롭다운 초기 상태 동기화
         const addedTr = tbody.lastChild;
         const selectEl = addedTr.querySelector('.export-status-select');
         if (row[16] && selectEl) {
@@ -800,6 +799,30 @@
       if (defaultText) defaultText.classList.remove('hidden');
       selectEl.className = "export-status-select w-full border border-slate-200 bg-white text-slate-700 font-bold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer";
     }
+
+    // ★ 10초마다 자동으로 구글 시트 데이터를 백그라운드에서 동기화하는 로직 추가 완료
+    setInterval(() => {
+      const savedUrl = localStorage.getItem('sheetWebAppUrl');
+      if (savedUrl) {
+        // 사용자가 현재 수출 현황판 테이블 안에서 글자를 입력(포커스) 중이 아닐 때만 자동 갱신
+        const activeEl = document.activeElement;
+        const isEditing = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT') && activeEl.closest('#tab-export');
+        
+        if (!isEditing) {
+          const oldScript = document.getElementById('jsonp-auto-loader');
+          if (oldScript) oldScript.remove();
+
+          window.onAutoSheetDataReceived = function(data) {
+            renderExportTable(data || []);
+          };
+
+          const script = document.createElement('script');
+          script.id = 'jsonp-auto-loader';
+          script.src = `${savedUrl}${savedUrl.includes('?') ? '&' : '?'}callback=onAutoSheetDataReceived&_ts=${Date.now()}`;
+          document.body.appendChild(script);
+        }
+      }
+    }, 10000); // 10초 주기
 
     window.addEventListener('DOMContentLoaded', () => {
       if (isKioskOnlyMode) {
