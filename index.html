@@ -229,7 +229,6 @@
       
       <div class="bg-slate-900 border border-blue-500/30 rounded-2xl p-4 my-2">
         <p class="text-slate-400 text-xs mb-1">현재 기사님의 순번</p>
-        <!-- ★ 대기중 개수 그대로 표시 (마지막 +1 제거 완료) -->
         <p class="text-3xl font-black text-amber-400"><span id="modal-queue-order-number">0</span>번째</p>
       </div>
 
@@ -298,7 +297,6 @@
     const dashboardRef = database.ref('dashboard_items');
 
     let autoCloseTimer = null;
-    let clientManagerMap = {};
     let localDataMap = {};
     let currentWaitingCount = 0;
 
@@ -397,7 +395,6 @@
         workType, timeStr, manager: "미정", carNumber, phoneNumber, clientName, quantity,
         note: "키오스크 신규 접수", status: "WAITING", timestamp: firebase.database.ServerValue.TIMESTAMP
       }).then(() => {
-        // ★ 요청하신 대로 +1을 제거하고 현재 대기중 개수(currentWaitingCount) 그대로 표시
         document.getElementById('modal-queue-order-number').innerText = currentWaitingCount;
         document.getElementById('kiosk-success-modal').classList.remove('hidden');
 
@@ -624,6 +621,43 @@
       document.body.appendChild(script);
     }
 
+    // ★ 수출 현황판 셀 수정 시 구글 시트로 자동 저장하는 핵심 함수
+    async function updateExportSheetField(element, colIndex) {
+      const webAppUrl = document.getElementById('sheet-url-input').value.trim();
+      if (!webAppUrl) return;
+
+      const row = element.closest('tr');
+      const tbody = document.getElementById('export-table-body');
+      const rowIndex = Array.from(tbody.children).indexOf(row);
+      const value = element.value;
+
+      element.classList.add('bg-yellow-50');
+
+      try {
+        const formData = new URLSearchParams();
+        formData.append('action', 'updateCell');
+        formData.append('row', rowIndex);
+        formData.append('col', colIndex);
+        formData.append('value', value);
+
+        const response = await fetch(webAppUrl, { method: 'POST', body: formData });
+        const result = await response.json();
+
+        if (result.status === 'success') {
+          element.classList.remove('bg-yellow-50');
+          element.classList.add('bg-emerald-50');
+          setTimeout(() => element.classList.remove('bg-emerald-50'), 1000);
+        } else {
+          throw new Error(result.message);
+        }
+      } catch (err) {
+        console.error("저장 실패:", err);
+        element.classList.remove('bg-yellow-50');
+        element.classList.add('bg-red-50');
+        alert("변경 사항 시트 저장 실패: 앱스 스크립트 배포 상태를 확인해주세요.");
+      }
+    }
+
     const shoringPhoneMap = {
       "SH": "010-8377-8779",
       "로케트": "051-442-0058",
@@ -671,21 +705,21 @@
         
         tr.innerHTML = `
           <td class="py-3 px-3 text-center bg-green-100/60 border-r font-bold text-sm">${row[0] || (idx + 1)}</td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[1] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[2] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[3] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[4] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[5] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[6] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[7] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[8] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[11] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${shoringVal}" class="shoring-input w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" oninput="updateRowCondition(this)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[13] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[14] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold"></td>
-          <td class="py-3 px-3 border-r min-w-[140px]"><input type="text" value="${row[15] || ''}" class="w-full text-center bg-slate-50 border rounded px-2.5 py-1.5 text-xs font-bold"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[1] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs" onchange="updateExportSheetField(this, 2)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[2] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 3)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[3] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs" onchange="updateExportSheetField(this, 4)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[4] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 5)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[5] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs" onchange="updateExportSheetField(this, 6)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[6] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs" onchange="updateExportSheetField(this, 7)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[7] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 8)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[8] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs" onchange="updateExportSheetField(this, 9)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[11] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs" onchange="updateExportSheetField(this, 12)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${shoringVal}" class="shoring-input w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 13); updateRowCondition(this);"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[13] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs" onchange="updateExportSheetField(this, 14)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[14] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 15)"></td>
+          <td class="py-3 px-3 border-r min-w-[140px]"><input type="text" value="${row[15] || ''}" class="w-full text-center bg-slate-50 border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 16)"></td>
           <td class="py-3 px-3 border-r min-w-[150px]">
-            <select class="export-status-select w-full border bg-white text-slate-700 font-bold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer" onchange="updateRowCondition(this)">
+            <select class="export-status-select w-full border bg-white text-slate-700 font-bold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer" onchange="updateExportSheetField(this, 17); updateRowCondition(this);">
               <option value="NONE" selected>선택 안함</option>
               <option value="TALLY">TALLY완료</option>
               <option value="VANNING">적입중</option>
@@ -708,6 +742,14 @@
           </td>
         `;
         tbody.appendChild(tr);
+        
+        // 데이터 행 내의 드롭다운 초기 상태 동기화
+        const addedTr = tbody.lastChild;
+        const selectEl = addedTr.querySelector('.export-status-select');
+        if (row[16] && selectEl) {
+          selectEl.value = row[16];
+          updateRowCondition(selectEl);
+        }
       });
       lucide.createIcons();
     }
@@ -758,12 +800,6 @@
       if (defaultText) defaultText.classList.remove('hidden');
       selectEl.className = "export-status-select w-full border border-slate-200 bg-white text-slate-700 font-bold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer";
     }
-
-    document.addEventListener('change', function(e) {
-      if (e.target && e.target.classList.contains('export-status-select')) {
-        updateRowCondition(e.target);
-      }
-    });
 
     window.addEventListener('DOMContentLoaded', () => {
       if (isKioskOnlyMode) {
