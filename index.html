@@ -800,7 +800,7 @@
       selectEl.className = "export-status-select w-full border border-slate-200 bg-white text-slate-700 font-bold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer";
     }
 
-    // ★ 1초마다 자동으로 구글 시트 데이터를 백그라운드에서 동기화하는 로직 (1000ms = 1초)
+    // ★ 10초마다 자동으로 구글 시트 데이터를 백그라운드에서 동기화하는 로직 추가 완료
     setInterval(() => {
       const savedUrl = localStorage.getItem('sheetWebAppUrl');
       if (savedUrl) {
@@ -822,7 +822,7 @@
           document.body.appendChild(script);
         }
       }
-    }, 1000); // 1초 주기
+    }, 10000); // 10초 주기
 
     window.addEventListener('DOMContentLoaded', () => {
       if (isKioskOnlyMode) {
