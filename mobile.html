@@ -16,7 +16,7 @@
     }
   </style>
 </head>
-<body class="bg-slate-100 min-h-screen text-slate-800 pb-12">
+<body class="bg-slate-100 min-h-screen text-slate-800 pb-16">
 
   <!-- Mobile Header -->
   <header class="bg-slate-900 text-white px-4 py-3.5 flex justify-between items-center shadow-md sticky top-0 z-40">
@@ -24,37 +24,62 @@
       <div class="bg-blue-600 text-white p-1.5 rounded-lg flex items-center justify-center">
         <i data-lucide="truck" class="w-5 h-5"></i>
       </div>
-      <span class="text-base font-black tracking-tight">경일글로벌 모바일</span>
+      <span class="text-sm font-black tracking-tight">경일글로벌 모바일</span>
     </div>
     
-    <!-- 우측 상단 조작 버튼 그룹 -->
-    <div class="flex items-center gap-2">
-      <span id="sync-status-badge" class="text-[11px] bg-amber-500 text-white px-2.5 py-1 rounded-full font-bold">대기 중</span>
-      <button onclick="fetchSheetData(localStorage.getItem('sheetWebAppUrl'))" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 shadow cursor-pointer">
-        <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i> 동기화
-      </button>
+    <div class="flex items-center gap-1.5">
+      <span id="sync-status-badge" class="text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold">대기 중</span>
       <button onclick="openSettingsModal()" class="bg-slate-800 hover:bg-slate-700 text-white p-2 rounded-xl transition cursor-pointer" title="환경설정">
         <i data-lucide="settings" class="w-4 h-4"></i>
       </button>
     </div>
   </header>
 
-  <!-- Mobile Main Content (Cards List) -->
-  <main class="max-w-md mx-auto px-3 py-4 space-y-4">
+  <!-- Mobile Tab Navigation -->
+  <nav class="bg-white border-b border-slate-200 px-4 py-2 flex gap-2 sticky top-[57px] z-30 shadow-sm">
+    <button id="nav-dashboard-tab" onclick="switchMobileTab('dashboard')" class="flex-1 py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition bg-blue-600 text-white shadow-sm">
+      <i data-lucide="clipboard-list" class="w-4 h-4"></i>
+      <span>오퍼레이터 대시보드</span>
+      <span id="mobile-nav-badge" class="bg-red-500 text-white text-[10px] px-1.5 py-0.2 rounded-full font-black">0</span>
+    </button>
+    <button id="nav-export-tab" onclick="switchMobileTab('export')" class="flex-1 py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition bg-slate-100 text-slate-600 hover:bg-slate-200">
+      <i data-lucide="ship" class="w-4 h-4"></i>
+      <span>수출 현황판</span>
+    </button>
+  </nav>
+
+  <!-- TAB 1: Operator Dashboard (실시간 접수 현황) -->
+  <main id="mobile-tab-dashboard" class="max-w-md mx-auto px-3 py-4 space-y-3 block">
     <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center">
       <div>
-        <p class="text-xs font-bold text-slate-400">수출작업 예정 현황</p>
-        <h2 class="text-base font-black text-slate-900">현장 작업 카드 목록</h2>
+        <p class="text-[11px] font-bold text-slate-400">Firebase 실시간 연동</p>
+        <h2 class="text-sm font-black text-slate-900">기사님 실시간 접수 목록</h2>
+      </div>
+      <span class="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-xl">대기중: <span id="mobile-count-waiting">0</span>건</span>
+    </div>
+
+    <div id="mobile-dashboard-container" class="space-y-3">
+      <div class="text-center py-12 text-slate-400 font-semibold bg-white rounded-2xl p-6 border border-slate-200">
+        접수된 데이터가 없습니다.
+      </div>
+    </div>
+  </main>
+
+  <!-- TAB 2: Export Status Board (수출 현황판) -->
+  <main id="mobile-tab-export" class="max-w-md mx-auto px-3 py-4 space-y-3 hidden">
+    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center">
+      <div>
+        <p class="text-[11px] font-bold text-slate-400">구글 시트 연동</p>
+        <h2 class="text-sm font-black text-slate-900">수출작업 예정 카드 목록</h2>
       </div>
       <button onclick="fetchSheetData(localStorage.getItem('sheetWebAppUrl'))" class="bg-slate-800 text-white px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1 shadow cursor-pointer">
         <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i> 새로고침
       </button>
     </div>
 
-    <!-- 렌더링될 카드 목록 컨테이너 -->
-    <div id="mobile-card-container" class="space-y-3">
+    <div id="mobile-export-container" class="space-y-3">
       <div class="text-center py-12 text-slate-400 font-semibold bg-white rounded-2xl p-6 border border-slate-200">
-        우측 상단 톱니바퀴(⚙️) 설정 버튼을 눌러 웹 앱 URL을 먼저 입력해주세요.
+        우측 상단 톱니바퀴(⚙️) 설정에서 웹 앱 URL을 먼저 입력해주세요.
       </div>
     </div>
   </main>
@@ -108,9 +133,11 @@
 
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
+    const dashboardRef = database.ref('dashboard_items');
     const exportPhotosRef = database.ref('export_photos');
     const exportStatusRef = database.ref('export_status');
 
+    let dashboardMap = {};
     let exportPhotosMap = {};
     let exportStatusMap = {};
     let lastSheetRows = [];
@@ -118,15 +145,31 @@
 
     lucide.createIcons();
 
+    // 1. 오퍼레이터 대시보드 (Firebase 실시간 연동)
+    dashboardRef.on('value', (snapshot) => {
+      dashboardMap = snapshot.val() || {};
+      renderMobileDashboard(dashboardMap);
+    });
+
     exportPhotosRef.on('value', (snapshot) => {
       exportPhotosMap = snapshot.val() || {};
-      if (lastSheetRows.length > 0) renderMobileCards(lastSheetRows);
+      if (lastSheetRows.length > 0) renderMobileExportCards(lastSheetRows);
     });
 
     exportStatusRef.on('value', (snapshot) => {
       exportStatusMap = snapshot.val() || {};
-      if (lastSheetRows.length > 0) renderMobileCards(lastSheetRows);
+      if (lastSheetRows.length > 0) renderMobileExportCards(lastSheetRows);
     });
+
+    function switchMobileTab(tabName) {
+      ['dashboard', 'export'].forEach(t => {
+        document.getElementById(`mobile-tab-${t}`).className = (t === tabName) ? "max-w-md mx-auto px-3 py-4 space-y-3 block" : "hidden";
+        const btn = document.getElementById(`nav-${t}-tab`);
+        if (btn) {
+          btn.className = (t === tabName) ? "flex-1 py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition bg-blue-600 text-white shadow-sm" : "flex-1 py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition bg-slate-100 text-slate-600 hover:bg-slate-200";
+        }
+      });
+    }
 
     function openSettingsModal() { document.getElementById('settingsModal').classList.remove('hidden'); }
     function closeSettingsModal() { document.getElementById('settingsModal').classList.add('hidden'); }
@@ -142,7 +185,7 @@
       if (!webAppUrl) return;
       const badge = document.getElementById('sync-status-badge');
       if (badge) {
-        badge.className = "text-[11px] bg-amber-500 text-white px-2.5 py-1 rounded-full font-bold animate-pulse";
+        badge.className = "text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold animate-pulse";
         badge.innerText = "동기화 중...";
       }
       const oldScript = document.getElementById('jsonp-script-loader');
@@ -153,10 +196,10 @@
         const newDataString = JSON.stringify(lastSheetRows);
         if (newDataString !== lastRawDataString) {
           lastRawDataString = newDataString;
-          renderMobileCards(lastSheetRows);
+          renderMobileExportCards(lastSheetRows);
         }
         if (badge) {
-          badge.className = "text-[11px] bg-emerald-500 text-white px-2.5 py-1 rounded-full font-bold";
+          badge.className = "text-[10px] bg-emerald-500 text-white px-2 py-0.5 rounded-full font-bold";
           badge.innerText = "연동 완료";
         }
       };
@@ -167,11 +210,16 @@
       document.body.appendChild(script);
     }
 
+    // 대시보드 항목 상태 및 필드 변경 함수
+    function updateDashboardField(key, field, val) { dashboardRef.child(key).update({ [field]: val }); }
+    function updateDashboardStatus(key, val) { dashboardRef.child(key).update({ status: val }); }
+    function deleteDashboardRow(key) { if (confirm("접수 건을 삭제하시겠습니까?")) dashboardRef.child(key).remove(); }
+
+    // 수출 현황판 상태 및 작업자 변경 함수
     async function updateExportStatusOrWorker(element, colIndex, fieldName, rowIndex) {
       const webAppUrl = document.getElementById('sheet-url-input').value.trim();
       const value = element.value;
 
-      element.classList.add('bg-yellow-50');
       exportStatusRef.child(`row_${rowIndex}_${fieldName}`).set(value);
 
       if (webAppUrl) {
@@ -186,10 +234,6 @@
           console.error("시트 저장 에러:", err);
         }
       }
-
-      element.classList.remove('bg-yellow-50');
-      element.classList.add('bg-emerald-50');
-      setTimeout(() => element.classList.remove('bg-emerald-50'), 1000);
     }
 
     function resizeImage(file, maxWidth = 900, quality = 0.6) {
@@ -218,7 +262,8 @@
       });
     }
 
-    async function handleMobilePhotoUpload(event, btnIndex, rowIndex, identifier) {
+    // 모바일 사진 업로드 (대시보드 / 수출현황판 공용 처리 가능)
+    async function handleMobilePhotoUpload(event, btnIndex, rowIndex, identifier, isDashboard = false) {
       const inputEl = event.target;
       const files = Array.from(inputEl.files);
       if (files.length === 0) return;
@@ -226,7 +271,7 @@
       const webAppUrl = document.getElementById('sheet-url-input').value.trim();
       if (!webAppUrl) { alert("환경설정에서 웹 앱 URL을 먼저 입력해주세요."); inputEl.value = ''; return; }
 
-      alert(`${files.length}장의 사진을 업로드합니다. 잠시만 기다려주세요!`);
+      alert(`${files.length}장의 사진을 압축 및 업로드합니다!`);
 
       try {
         const uploadPromises = files.map(async (file, i) => {
@@ -246,20 +291,101 @@
         });
 
         const newUploadedUrls = await Promise.all(uploadPromises);
-        const dbKey = `row_${rowIndex}_photo_${btnIndex}`;
+        const prefix = isDashboard ? 'dash' : 'row';
+        const dbKey = `${prefix}_${rowIndex}_photo_${btnIndex}`;
+        
         let existingUrls = (exportPhotosMap[dbKey] && exportPhotosMap[dbKey].urls) ? exportPhotosMap[dbKey].urls : [];
         let combinedUrls = existingUrls.concat(newUploadedUrls);
 
         exportPhotosRef.child(dbKey).set({ urls: combinedUrls, identifier: identifier });
-        alert("사진 업로드가 완료되었습니다!");
+        alert("사진 업로드 완료!");
       } catch (error) {
         alert("업로드 실패: " + error.message);
       }
       inputEl.value = '';
     }
 
-    function renderMobileCards(rows) {
-      const container = document.getElementById('mobile-card-container');
+    // 1. 오퍼레이터 대시보드 카드 렌더링
+    function renderMobileDashboard(data) {
+      const container = document.getElementById('mobile-dashboard-container');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const keys = Object.keys(data);
+      let waitingCount = 0;
+      keys.forEach(k => { if (data[k].status === 'WAITING') waitingCount++; });
+      document.getElementById('mobile-count-waiting').innerText = waitingCount;
+      document.getElementById('mobile-nav-badge').innerText = waitingCount;
+
+      if (keys.length === 0) {
+        container.innerHTML = `<div class="text-center py-12 text-slate-400 font-semibold bg-white rounded-2xl p-6 border border-slate-200">등록된 접수 건이 없습니다.</div>`;
+        return;
+      }
+
+      keys.reverse().forEach(key => {
+        const item = data[key];
+        const isCompleted = item.status === 'COMPLETED';
+        const workerList = ["조인효", "윤동현", "이예성", "김찬양"];
+        let workerOptions = `<option value="">작업자 선택</option>`;
+        workerList.forEach(w => {
+          workerOptions += `<option value="${w}" ${item.worker === w ? 'selected' : ''}>${w}</option>`;
+        });
+
+        const p1Data = exportPhotosMap[`dash_${key}_photo_1`];
+        const p2Data = exportPhotosMap[`dash_${key}_photo_2`];
+
+        const card = document.createElement('div');
+        card.className = "bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3";
+        card.innerHTML = `
+          <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+            <div class="flex items-center gap-2">
+              <span class="bg-blue-600 text-white font-black text-[10px] px-2 py-0.5 rounded-md">${item.workType || '하차(입고)'}</span>
+              <span class="font-black text-slate-900 text-xs">${item.carNumber || ''}</span>
+            </div>
+            <button onclick="deleteDashboardRow('${key}')" class="text-red-500 hover:text-red-700 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div class="bg-slate-50 p-2 rounded-xl border border-slate-100"><span class="text-slate-400 block text-[10px]">화주명</span><input type="text" value="${item.clientName || ''}" onchange="updateDashboardField('${key}', 'clientName', this.value)" class="w-full bg-white border rounded px-1.5 py-1 text-xs font-bold mt-0.5"></div>
+            <div class="bg-slate-50 p-2 rounded-xl border border-slate-100"><span class="text-slate-400 block text-[10px]">연락처</span><span class="font-bold text-slate-800">${item.phoneNumber || ''}</span></div>
+            <div class="bg-slate-50 p-2 rounded-xl border border-slate-100"><span class="text-slate-400 block text-[10px]">수량 / 시간</span><span class="font-bold text-slate-800">${item.quantity || 0}박스 / ${item.timeStr || ''}</span></div>
+            <div class="bg-slate-50 p-2 rounded-xl border border-slate-100"><span class="text-slate-400 block text-[10px]">담당자</span><input type="text" value="${item.manager || ''}" onchange="updateDashboardField('${key}', 'manager', this.value)" class="w-full bg-white border rounded px-1.5 py-1 text-xs font-bold mt-0.5"></div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <select onchange="updateDashboardStatus('${key}', this.value)" class="w-full border border-slate-200 bg-white font-bold rounded-xl px-2.5 py-2 text-xs outline-none">
+              <option value="WAITING" ${item.status === 'WAITING' ? 'selected' : ''}>접수완료</option>
+              <option value="IN_PROGRESS" ${item.status === 'IN_PROGRESS' ? 'selected' : ''}>작업 중</option>
+              <option value="COMPLETED" ${item.status === 'COMPLETED' ? 'selected' : ''}>작업 완료</option>
+            </select>
+            <select onchange="updateDashboardField('${key}', 'worker', this.value)" class="w-full border border-slate-200 bg-white font-bold rounded-xl px-2.5 py-2 text-xs outline-none">
+              ${workerOptions}
+            </select>
+          </div>
+
+          ${isCompleted ? `
+            <div class="pt-2 border-t border-slate-100 flex gap-2">
+              <label class="flex-1 bg-blue-600 text-white font-bold py-2 rounded-xl text-xs text-center cursor-pointer">
+                📷 사진 1 <input type="file" accept="image/*" multiple class="hidden" onchange="handleMobilePhotoUpload(event, 1, '${key}', '${item.carNumber}', true)">
+              </label>
+              <label class="flex-1 bg-indigo-600 text-white font-bold py-2 rounded-xl text-xs text-center cursor-pointer">
+                📷 사진 2 <input type="file" accept="image/*" multiple class="hidden" onchange="handleMobilePhotoUpload(event, 2, '${key}', '${item.carNumber}', true)">
+              </label>
+            </div>
+            <div class="flex gap-2">
+              ${p1Data && p1Data.urls ? `<button onclick='showPhotoModal(${JSON.stringify(p1Data.urls)}, "${item.carNumber} - 사진 1")' class="flex-1 bg-emerald-50 text-emerald-700 border border-emerald-300 font-bold py-1.5 rounded-xl text-xs">사진 1 보기 (${p1Data.urls.length})</button>` : ''}
+              ${p2Data && p2Data.urls ? `<button onclick='showPhotoModal(${JSON.stringify(p2Data.urls)}, "${item.carNumber} - 사진 2")' class="flex-1 bg-emerald-50 text-emerald-700 border border-emerald-300 font-bold py-1.5 rounded-xl text-xs">사진 2 보기 (${p2Data.urls.length})</button>` : ''}
+            </div>
+          ` : ''}
+        `;
+        container.appendChild(card);
+      });
+      lucide.createIcons();
+    }
+
+    // 2. 수출 현황판 카드 렌더링
+    function renderMobileExportCards(rows) {
+      const container = document.getElementById('mobile-export-container');
       if (!container) return;
       container.innerHTML = '';
 
@@ -293,11 +419,10 @@
 
         const card = document.createElement('div');
         card.className = "bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3";
-        
         card.innerHTML = `
           <div class="flex justify-between items-center border-b border-slate-100 pb-2.5">
             <div class="flex items-center gap-2">
-              <span class="bg-blue-600 text-white font-black text-xs px-2.5 py-1 rounded-lg">No. ${no}</span>
+              <span class="bg-amber-500 text-white font-black text-xs px-2.5 py-1 rounded-lg">No. ${no}</span>
               <span class="font-black text-slate-900 text-sm">${cntr}</span>
             </div>
             <span class="text-xs font-bold text-slate-500">${spec} / ${qty}박스</span>
@@ -379,7 +504,7 @@
         document.getElementById('sheet-url-input').value = savedUrl;
         fetchSheetData(savedUrl);
       } else {
-        openSettingsModal(); // URL이 없으면 첫 접속 시 설정창 자동 오픈
+        openSettingsModal();
       }
     });
   </script>
