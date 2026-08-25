@@ -162,7 +162,6 @@
       if (lastSheetRows.length > 0) renderMobileExportCards(lastSheetRows);
     });
 
-    // 탭 전환 시 localStorage에 현재 위치 저장 (새로고침 유지용)
     function switchMobileTab(tabName) {
       localStorage.setItem('currentMobileTab', tabName);
       ['dashboard', 'export'].forEach(t => {
@@ -305,6 +304,7 @@
       inputEl.value = '';
     }
 
+    // 1. 오퍼레이터 대시보드 카드 렌더링 (연락처 클릭 시 전화 연결 기능 추가)
     function renderMobileDashboard(data) {
       const container = document.getElementById('mobile-dashboard-container');
       if (!container) return;
@@ -332,6 +332,8 @@
 
         const p1Data = exportPhotosMap[`dash_${key}_photo_1`];
         const p2Data = exportPhotosMap[`dash_${key}_photo_2`];
+        const rawPhone = item.phoneNumber || '';
+        const telLink = rawPhone ? `tel:${rawPhone.replace(/-/g, '')}` : '#';
 
         const card = document.createElement('div');
         card.className = "bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3";
@@ -346,7 +348,11 @@
 
           <div class="grid grid-cols-2 gap-2 text-xs">
             <div class="bg-slate-50 p-2 rounded-xl border border-slate-100"><span class="text-slate-400 block text-[10px]">화주명</span><input type="text" value="${item.clientName || ''}" onchange="updateDashboardField('${key}', 'clientName', this.value)" class="w-full bg-white border rounded px-1.5 py-1 text-xs font-bold mt-0.5"></div>
-            <div class="bg-slate-50 p-2 rounded-xl border border-slate-100"><span class="text-slate-400 block text-[10px]">연락처</span><span class="font-bold text-slate-800">${item.phoneNumber || ''}</span></div>
+            <!-- 연락처 클릭 시 전화 걸기 연결 -->
+            <div class="bg-slate-50 p-2 rounded-xl border border-slate-100">
+              <span class="text-slate-400 block text-[10px]">연락처 (터치시 전화)</span>
+              <a href="${telLink}" class="font-bold text-blue-600 underline block mt-0.5">${rawPhone || '-'}</a>
+            </div>
             <div class="bg-slate-50 p-2 rounded-xl border border-slate-100"><span class="text-slate-400 block text-[10px]">수량 / 시간</span><span class="font-bold text-slate-800">${item.quantity || 0} / ${item.timeStr || ''}</span></div>
             <div class="bg-slate-50 p-2 rounded-xl border border-slate-100"><span class="text-slate-400 block text-[10px]">담당자</span><input type="text" value="${item.manager || ''}" onchange="updateDashboardField('${key}', 'manager', this.value)" class="w-full bg-white border rounded px-1.5 py-1 text-xs font-bold mt-0.5"></div>
           </div>
@@ -428,7 +434,7 @@
               <span class="bg-amber-500 text-white font-black text-xs px-2.5 py-1 rounded-lg">No. ${no}</span>
               <span class="font-black text-slate-900 text-sm">${cntr}</span>
             </div>
-            <span class="text-xs font-bold text-slate-500">${spec} / ${qty}</span>
+            <span class="text-xs font-bold text-slate-500">${spec} / ${qty}박스</span>
           </div>
 
           <div class="grid grid-cols-2 gap-2 text-xs">
@@ -502,7 +508,6 @@
     }, 4000);
 
     window.addEventListener('DOMContentLoaded', () => {
-      // 마지막으로 보던 탭 위치 복원 (기본값: dashboard)
       const lastTab = localStorage.getItem('currentMobileTab') || 'dashboard';
       switchMobileTab(lastTab);
 
