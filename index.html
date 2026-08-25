@@ -98,12 +98,13 @@
               <th class="py-3.5 px-4 text-center nowrap-cell min-w-[80px]">수량</th>
               <th class="py-3.5 px-4 min-w-[220px] nowrap-cell">비고</th>
               <th class="py-3.5 px-4 text-center min-w-[130px] nowrap-cell">상태</th>
-              <th class="py-3.5 px-4 min-w-[180px] nowrap-cell">작업사진</th>
+              <th class="py-3.5 px-4 text-center min-w-[130px] nowrap-cell">작업자</th>
+              <th class="py-3.5 px-4 min-w-[180px] nowrap-cell">작업사진 & 쇼링번호</th>
             </tr>
           </thead>
           <tbody id="table-body" class="divide-y divide-slate-100 font-medium">
             <tr>
-              <td colspan="11" class="text-center py-8 text-slate-400">데이터를 불러오는 중입니다...</td>
+              <td colspan="12" class="text-center py-8 text-slate-400">데이터를 불러오는 중입니다...</td>
             </tr>
           </tbody>
         </table>
@@ -312,10 +313,16 @@
     function renderDashboardTable(data) {
       const tbody = document.getElementById('table-body');
       if (!tbody) return;
+
+      const activeEl = document.activeElement;
+      if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT') && activeEl.closest('#tab-export')) {
+        return; 
+      }
+
       tbody.innerHTML = '';
       const keys = Object.keys(data);
       if (keys.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="11" class="text-center py-8 text-slate-400 font-semibold">등록된 접수 건이 없습니다.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="12" class="text-center py-8 text-slate-400 font-semibold">등록된 접수 건이 없습니다.</td></tr>`;
         return;
       }
       keys.reverse().forEach(key => {
@@ -326,6 +333,14 @@
         const isCompleted = item.status === 'COMPLETED';
         const photoGroupClass = isCompleted ? '' : 'hidden';
         const defaultTextClass = isCompleted ? 'hidden' : '';
+
+        // 작업자 목록 옵션 정의
+        const workerList = ["조인효", "윤동현", "이예성", "김찬양"];
+        let workerOptions = `<option value="">선택 안함</option>`;
+        workerList.forEach(w => {
+          const selected = item.worker === w ? 'selected' : '';
+          workerOptions += `<option value="${w}" ${selected}>${w}</option>`;
+        });
 
         tr.innerHTML = `
           <td class="py-3.5 px-3 text-center nowrap-cell"><button onclick="deleteDashboardRow('${key}')" class="bg-red-50 text-red-600 p-1.5 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
@@ -342,6 +357,11 @@
               <option value="WAITING" ${item.status === 'WAITING' ? 'selected' : ''}>접수완료</option>
               <option value="IN_PROGRESS" ${item.status === 'IN_PROGRESS' ? 'selected' : ''}>작업 중</option>
               <option value="COMPLETED" ${item.status === 'COMPLETED' ? 'selected' : ''}>작업 완료</option>
+            </select>
+          </td>
+          <td class="py-3.5 px-4 text-center min-w-[130px]">
+            <select onchange="updateFirebaseField('${key}', 'worker', this.value)" class="border rounded px-2.5 py-1.5 text-xs font-bold bg-white text-slate-700 cursor-pointer">
+              ${workerOptions}
             </select>
           </td>
           <td class="py-3.5 px-4 photo-cell nowrap-cell min-w-[180px]">
@@ -361,7 +381,7 @@
     }
 
     function recalculateDashboardCounts(data) {
-      let total = 0, waiting = 0;
+      let total = 0, waiting = 0, progress = 0, completed = 0;
       Object.values(data).forEach(item => {
         total++;
         if (item.status === 'WAITING') waiting++;
@@ -372,7 +392,7 @@
       document.getElementById('count-waiting').innerText = waiting;
       document.getElementById('count-progress').innerText = progress;
       document.getElementById('count-completed').innerText = completed;
-      document.getElementById('nav-badge').innerText = total;
+      document.getElementById('nav-badge').innerText = waiting;
 
       currentWaitingCount = waiting;
       const kioskHeaderQueue = document.getElementById('kiosk-header-queue-count');
@@ -393,7 +413,7 @@
 
       dashboardRef.push({
         workType, timeStr, manager: "미정", carNumber, phoneNumber, clientName, quantity,
-        note: "키오스크 신규 접수", status: "WAITING", timestamp: firebase.database.ServerValue.TIMESTAMP
+        note: "키오스크 신규 접수", status: "WAITING", worker: "", timestamp: firebase.database.ServerValue.TIMESTAMP
       }).then(() => {
         document.getElementById('modal-queue-order-number').innerText = currentWaitingCount;
         document.getElementById('kiosk-success-modal').classList.remove('hidden');
@@ -621,7 +641,6 @@
       document.body.appendChild(script);
     }
 
-    // 수출 현황판 셀 수정 시 구글 시트로 자동 저장하는 함수
     async function updateExportSheetField(element, colIndex) {
       const webAppUrl = document.getElementById('sheet-url-input').value.trim();
       if (!webAppUrl) return;
@@ -693,7 +712,6 @@
       const tbody = document.getElementById('export-table-body');
       if (!tbody) return;
 
-      // ★ 핵심 수정: 현재 사용자가 입력(포커스) 중인 필드가 있다면, 리프레시 도중 글자가 날아가지 않도록 즉시 중단 (완벽 방어)
       const activeEl = document.activeElement;
       if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT') && activeEl.closest('#tab-export')) {
         return; 
@@ -714,15 +732,15 @@
           <td class="py-3 px-3 text-center bg-green-100/60 border-r font-bold text-sm">${row[0] || (idx + 1)}</td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[1] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs" onchange="updateExportSheetField(this, 2)"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[2] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 3)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[3] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs" onchange="updateExportSheetField(this, 4)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[3] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs" onchange="updateExportSheetField(this, 4)"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[4] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 5)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[5] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs" onchange="updateExportSheetField(this, 6)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[6] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs" onchange="updateExportSheetField(this, 7)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[5] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs" onchange="updateExportSheetField(this, 6)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[6] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs" onchange="updateExportSheetField(this, 7)"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[7] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 8)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[8] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs" onchange="updateExportSheetField(this, 9)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[11] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs" onchange="updateExportSheetField(this, 12)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[8] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs" onchange="updateExportSheetField(this, 9)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[11] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs" onchange="updateExportSheetField(this, 12)"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${shoringVal}" class="shoring-input w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 13); updateRowCondition(this);"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[13] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs" onchange="updateExportSheetField(this, 14)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[13] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs" onchange="updateExportSheetField(this, 14)"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[14] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 15)"></td>
           <td class="py-3 px-3 border-r min-w-[140px]"><input type="text" value="${row[15] || ''}" class="w-full text-center bg-slate-50 border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 16)"></td>
           <td class="py-3 px-3 border-r min-w-[150px]">
@@ -807,11 +825,9 @@
       selectEl.className = "export-status-select w-full border border-slate-200 bg-white text-slate-700 font-bold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer";
     }
 
-    // ★ 자동 동기화 주기를 3초(3000ms)로 안정화하고, 타이핑 방어 로직 강화
     setInterval(() => {
       const savedUrl = localStorage.getItem('sheetWebAppUrl');
       if (savedUrl) {
-        // 내가 입력 중인지 한 번 더블 체크
         const activeEl = document.activeElement;
         const isEditing = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT') && activeEl.closest('#tab-export');
         
@@ -829,7 +845,7 @@
           document.body.appendChild(script);
         }
       }
-    }, 5000); // 5초 주기 (1초는 구글 서버 부하 및 타이핑 딜레이를 유발하므로 3초가 가장 안정적입니다)
+    }, 3000);
 
     window.addEventListener('DOMContentLoaded', () => {
       if (isKioskOnlyMode) {
