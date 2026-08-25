@@ -333,19 +333,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
   <script>
-    /*
-     * 경일글로벌 기사님 접수 키오스크
-     *
-     * 기존 index.html에서 키오스크에 필요한 부분만 분리했습니다.
-     *
-     * 데이터 저장 위치:
-     * Firebase Realtime Database
-     *   dashboard_items
-     *
-     * 기존 관리자 페이지(index.html)와 동일한 Firebase 프로젝트를
-     * 사용하므로 기사님이 여기서 접수하면 관리자 대시보드에 표시됩니다.
-     */
-
     const firebaseConfig = {
       apiKey: "AIzaSyDgXG4dVextcvKD2vwsa11Y7zXPp8rbI08",
       authDomain: "kiglsystem.firebaseapp.com",
@@ -366,14 +353,8 @@
     let currentWaitingCount = 0;
     let isSubmitting = false;
 
-    // 아이콘 초기화
     lucide.createIcons();
 
-    /*
-     * 현재 대기 건수 실시간 감시
-     *
-     * 관리자 페이지의 dashboard_items와 동일한 데이터를 읽습니다.
-     */
     dashboardRef.on('value', (snapshot) => {
       const data = snapshot.val() || {};
       recalculateWaitingCount(data);
@@ -400,12 +381,26 @@
       }
     }
 
-    /*
-     * 접수
-     *
-     * 기존 index.html의 handleKioskSubmit() 로직을 기준으로
-     * kiosk.html에 필요한 부분만 유지했습니다.
-     */
+    // ★ Make 웹훅을 통해 카카오톡 오픈채팅방(단톡방)으로 알림을 전송하는 함수 추가
+    function sendMakeWebhookAlert(clientName, carNumber, workType, quantity, phoneNumber, note) {
+      const webhookUrl = 'https://hook.eu1.make.com/awnbitgj4j87x37j6ld3iwskva4shco3';
+
+      const payload = {
+        workType: workType,
+        clientName: clientName,
+        carNumber: carNumber,
+        phoneNumber: phoneNumber,
+        quantity: quantity,
+        note: note || '-'
+      };
+
+      fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).catch(err => console.error("Make 웹훅 전송 실패:", err));
+    }
+
     async function handleKioskSubmit(event) {
       event.preventDefault();
 
@@ -433,7 +428,6 @@
       const manager =
         document.getElementById('manager').value.trim();
 
-      // 기본 브라우저 validation
       const form = document.getElementById('kiosk-form');
 
       if (!form.checkValidity()) {
@@ -475,10 +469,6 @@
       `;
       lucide.createIcons();
 
-      /*
-       * push() 전의 대기 건수는 "현재 대기 건수"입니다.
-       * 신규 접수 건까지 포함한 순번을 계산하기 위해 +1을 사용합니다.
-       */
       const queueOrderNumber = currentWaitingCount + 1;
 
       try {
@@ -496,7 +486,9 @@
           timestamp: firebase.database.ServerValue.TIMESTAMP
         });
 
-        // 완료 모달
+        // ★ Firebase 저장 성공 시 Make 웹훅(카카오톡 오픈채팅방 연동용) 전송 실행
+        sendMakeWebhookAlert(clientName, carNumber, workType, quantityNumber, phoneNumber, note);
+
         document.getElementById('modal-queue-order-number').innerText =
           queueOrderNumber;
 
@@ -504,7 +496,6 @@
         modal.classList.remove('hidden');
         modal.classList.add('flex');
 
-        // 10초 후 자동으로 초기 화면 복귀
         if (autoCloseTimer) {
           clearTimeout(autoCloseTimer);
         }
@@ -530,10 +521,6 @@
       }
     }
 
-    /*
-     * 성공 모달 닫기
-     * 기존 index.html과 동일하게 입력 폼을 초기화합니다.
-     */
     function closeKioskSuccessModal() {
       if (autoCloseTimer) {
         clearTimeout(autoCloseTimer);
@@ -545,58 +532,36 @@
       modal.classList.remove('flex');
 
       document.getElementById('kiosk-form').reset();
-
-      // 포커스 제거
       document.activeElement?.blur();
     }
 
-    /*
-     * 전화번호 자동 하이픈
-     * 기존 index.html의 formatPhoneNumber() 로직을 그대로 사용합니다.
-     */
     function formatPhoneNumber(input) {
       let val = input.value.replace(/\D/g, '');
-
       let formatted = '';
 
       if (val.length < 4) {
         formatted = val;
       } else if (val.length < 8) {
         formatted =
-          val.substring(0, 3) +
-          '-' +
-          val.substring(3);
+          val.substring(0, 3) + '-' + val.substring(3);
       } else if (val.length < 11) {
         formatted =
-          val.substring(0, 3) +
-          '-' +
-          val.substring(3, 7) +
-          '-' +
-          val.substring(7);
+          val.substring(0, 3) + '-' + val.substring(3, 7) + '-' + val.substring(7);
       } else {
         formatted =
-          val.substring(0, 3) +
-          '-' +
-          val.substring(3, 7) +
-          '-' +
-          val.substring(7, 11);
+          val.substring(0, 3) + '-' + val.substring(3, 7) + '-' + val.substring(7, 11);
       }
 
       input.value = formatted;
     }
 
-    /*
-     * Firebase 연결 오류 안내
-     */
     function showFirebaseError() {
       const queue = document.getElementById('kiosk-header-queue-count');
-
       if (queue) {
         queue.innerText = '-';
       }
     }
 
-    // 이벤트 연결
     document.getElementById('kiosk-form').addEventListener(
       'submit',
       handleKioskSubmit
@@ -614,10 +579,6 @@
       closeKioskSuccessModal
     );
 
-    /*
-     * 키오스크에서 Enter 입력 시 의도치 않은 동작을 줄이기 위한 처리.
-     * 폼 submit 자체는 그대로 사용합니다.
-     */
     window.addEventListener('DOMContentLoaded', () => {
       document.getElementById('client-name')?.focus();
     });
