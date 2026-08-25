@@ -145,7 +145,7 @@
 
     lucide.createIcons();
 
-    // 1. 오퍼레이터 대시보드 (Firebase 실시간 연동)
+    // 실시간 데이터 수신 시 화면 즉시 렌더링
     dashboardRef.on('value', (snapshot) => {
       dashboardMap = snapshot.val() || {};
       renderMobileDashboard(dashboardMap);
@@ -153,6 +153,7 @@
 
     exportPhotosRef.on('value', (snapshot) => {
       exportPhotosMap = snapshot.val() || {};
+      renderMobileDashboard(dashboardMap);
       if (lastSheetRows.length > 0) renderMobileExportCards(lastSheetRows);
     });
 
@@ -210,12 +211,10 @@
       document.body.appendChild(script);
     }
 
-    // 대시보드 항목 상태 및 필드 변경 함수
     function updateDashboardField(key, field, val) { dashboardRef.child(key).update({ [field]: val }); }
     function updateDashboardStatus(key, val) { dashboardRef.child(key).update({ status: val }); }
     function deleteDashboardRow(key) { if (confirm("접수 건을 삭제하시겠습니까?")) dashboardRef.child(key).remove(); }
 
-    // 수출 현황판 상태 및 작업자 변경 함수
     async function updateExportStatusOrWorker(element, colIndex, fieldName, rowIndex) {
       const webAppUrl = document.getElementById('sheet-url-input').value.trim();
       const value = element.value;
@@ -262,8 +261,7 @@
       });
     }
 
-    // 모바일 사진 업로드 (대시보드 / 수출현황판 공용 처리 가능)
-    async function handleMobilePhotoUpload(event, btnIndex, rowIndex, identifier, isDashboard = false) {
+    async function handleMobilePhotoUpload(event, btnIndex, rowKeyOrIdx, identifier, isDashboard = false) {
       const inputEl = event.target;
       const files = Array.from(inputEl.files);
       if (files.length === 0) return;
@@ -292,7 +290,7 @@
 
         const newUploadedUrls = await Promise.all(uploadPromises);
         const prefix = isDashboard ? 'dash' : 'row';
-        const dbKey = `${prefix}_${rowIndex}_photo_${btnIndex}`;
+        const dbKey = `${prefix}_${rowKeyOrIdx}_photo_${btnIndex}`;
         
         let existingUrls = (exportPhotosMap[dbKey] && exportPhotosMap[dbKey].urls) ? exportPhotosMap[dbKey].urls : [];
         let combinedUrls = existingUrls.concat(newUploadedUrls);
@@ -342,7 +340,7 @@
               <span class="bg-blue-600 text-white font-black text-[10px] px-2 py-0.5 rounded-md">${item.workType || '하차(입고)'}</span>
               <span class="font-black text-slate-900 text-xs">${item.carNumber || ''}</span>
             </div>
-            <button onclick="deleteDashboardRow('${key}')" class="text-red-500 hover:text-red-700 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            <button onclick="deleteDashboardRow('${key}')" class="text-red-500 hover:text-red-700 p-1 cursor-pointer"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
           </div>
 
           <div class="grid grid-cols-2 gap-2 text-xs">
@@ -365,16 +363,16 @@
 
           ${isCompleted ? `
             <div class="pt-2 border-t border-slate-100 flex gap-2">
-              <label class="flex-1 bg-blue-600 text-white font-bold py-2 rounded-xl text-xs text-center cursor-pointer">
-                📷 사진 1 <input type="file" accept="image/*" multiple class="hidden" onchange="handleMobilePhotoUpload(event, 1, '${key}', '${item.carNumber}', true)">
+              <label class="flex-1 bg-blue-600 text-white font-bold py-2 rounded-xl text-xs text-center cursor-pointer shadow-sm">
+                📷 사진 1 업로드 <input type="file" accept="image/*" multiple class="hidden" onchange="handleMobilePhotoUpload(event, 1, '${key}', '${item.carNumber}', true)">
               </label>
-              <label class="flex-1 bg-indigo-600 text-white font-bold py-2 rounded-xl text-xs text-center cursor-pointer">
-                📷 사진 2 <input type="file" accept="image/*" multiple class="hidden" onchange="handleMobilePhotoUpload(event, 2, '${key}', '${item.carNumber}', true)">
+              <label class="flex-1 bg-indigo-600 text-white font-bold py-2 rounded-xl text-xs text-center cursor-pointer shadow-sm">
+                📷 사진 2 업로드 <input type="file" accept="image/*" multiple class="hidden" onchange="handleMobilePhotoUpload(event, 2, '${key}', '${item.carNumber}', true)">
               </label>
             </div>
             <div class="flex gap-2">
-              ${p1Data && p1Data.urls ? `<button onclick='showPhotoModal(${JSON.stringify(p1Data.urls)}, "${item.carNumber} - 사진 1")' class="flex-1 bg-emerald-50 text-emerald-700 border border-emerald-300 font-bold py-1.5 rounded-xl text-xs">사진 1 보기 (${p1Data.urls.length})</button>` : ''}
-              ${p2Data && p2Data.urls ? `<button onclick='showPhotoModal(${JSON.stringify(p2Data.urls)}, "${item.carNumber} - 사진 2")' class="flex-1 bg-emerald-50 text-emerald-700 border border-emerald-300 font-bold py-1.5 rounded-xl text-xs">사진 2 보기 (${p2Data.urls.length})</button>` : ''}
+              ${p1Data && p1Data.urls && p1Data.urls.length > 0 ? `<button onclick='showPhotoModal(${JSON.stringify(p1Data.urls)}, "${item.carNumber} - 사진 1")' class="flex-1 bg-emerald-50 text-emerald-700 border border-emerald-300 font-bold py-1.5 rounded-xl text-xs cursor-pointer">사진 1 보기 (${p1Data.urls.length}장)</button>` : ''}
+              ${p2Data && p2Data.urls && p2Data.urls.length > 0 ? `<button onclick='showPhotoModal(${JSON.stringify(p2Data.urls)}, "${item.carNumber} - 사진 2")' class="flex-1 bg-emerald-50 text-emerald-700 border border-emerald-300 font-bold py-1.5 rounded-xl text-xs cursor-pointer">사진 2 보기 (${p2Data.urls.length}장)</button>` : ''}
             </div>
           ` : ''}
         `;
