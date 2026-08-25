@@ -236,6 +236,37 @@
       }
     }
 
+    const shoringPhoneMap = {
+      "SH": "010-8377-8779",
+      "로케트": "051-442-0058",
+      "로켓트": "051-442-0058",
+      "하람": "010-9419-2245",
+      "더옥": "051-971-6949",
+      "우영": "051-643-2333",
+      "신성": "051-634-4353",
+      "신성TLS": "051-634-4353",
+      "동해": "051-464-8588",
+      "카스": "051-463-9525",
+      "하나": "051-753-3618",
+      "대명": "051-637-4667",
+      "SL": "010-8014-4276",
+      "씨어코리아": "010-2515-4542",
+      "씨어": "010-2515-4542",
+      "세아": "010-2515-4542",
+      "제이원": "010-9649-9399"
+    };
+
+    function getPhoneNumberByShoring(shoringText) {
+      if (!shoringText) return null;
+      const clean = shoringText.trim();
+      for (const [key, phone] of Object.entries(shoringPhoneMap)) {
+        if (clean.toUpperCase().includes(key.toUpperCase())) {
+          return phone;
+        }
+      }
+      return null;
+    }
+
     function resizeImage(file, maxWidth = 900, quality = 0.6) {
       return new Promise((resolve) => {
         const reader = new FileReader();
@@ -304,7 +335,6 @@
       inputEl.value = '';
     }
 
-    // 1. 오퍼레이터 대시보드 카드 렌더링 (연락처 클릭 시 전화 연결 기능 추가)
     function renderMobileDashboard(data) {
       const container = document.getElementById('mobile-dashboard-container');
       if (!container) return;
@@ -348,7 +378,6 @@
 
           <div class="grid grid-cols-2 gap-2 text-xs">
             <div class="bg-slate-50 p-2 rounded-xl border border-slate-100"><span class="text-slate-400 block text-[10px]">화주명</span><input type="text" value="${item.clientName || ''}" onchange="updateDashboardField('${key}', 'clientName', this.value)" class="w-full bg-white border rounded px-1.5 py-1 text-xs font-bold mt-0.5"></div>
-            <!-- 연락처 클릭 시 전화 걸기 연결 -->
             <div class="bg-slate-50 p-2 rounded-xl border border-slate-100">
               <span class="text-slate-400 block text-[10px]">연락처 (터치시 전화)</span>
               <a href="${telLink}" class="font-bold text-blue-600 underline block mt-0.5">${rawPhone || '-'}</a>
@@ -393,6 +422,7 @@
       lucide.createIcons();
     }
 
+    // 2. 수출 현황판 카드 렌더링 (작업 상태에 따른 쇼링 번호 표시 및 전화 연결 기능 추가)
     function renderMobileExportCards(rows) {
       const container = document.getElementById('mobile-export-container');
       if (!container) return;
@@ -410,7 +440,7 @@
         const seal = row[3] || '-';
         const client = row[4] || '화주 미정';
         const qty = row[7] || '0';
-        const shoring = row[11] || '-';
+        const shoring = (row[11] || '').toString().trim();
         const note = row[13] || '-';
         const bkNo = row[14] || '-';
 
@@ -425,6 +455,25 @@
 
         const p1Data = exportPhotosMap[`row_${idx}_photo_1`];
         const p2Data = exportPhotosMap[`row_${idx}_photo_2`];
+
+        // 쇼링 번호 매칭 로직
+        let shoringDisplayHtml = '';
+        if (savedStatus === 'DONE' || savedStatus === '작업완료') {
+          shoringDisplayHtml = `<div class="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold p-2 rounded-xl text-center">작업 완료</div>`;
+        } else if (shoring.toUpperCase() === 'X') {
+          shoringDisplayHtml = `<div class="bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold p-2 rounded-xl text-center">쇼링 X 씰 채결부탁드려요</div>`;
+        } else if (savedStatus === 'VANNING') {
+          const matchedPhone = getPhoneNumberByShoring(shoring);
+          if (matchedPhone) {
+            const cleanPhone = matchedPhone.replace(/-/g, '');
+            shoringDisplayHtml = `
+              <div class="bg-blue-50 border border-blue-200 p-2 rounded-xl text-center flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-600">쇼링 (${shoring}) 번호:</span>
+                <a href="tel:${cleanPhone}" class="text-xs font-black text-blue-600 underline">${matchedPhone} (터치시 통화)</a>
+              </div>
+            `;
+          }
+        }
 
         const card = document.createElement('div');
         card.className = "bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3";
@@ -443,6 +492,9 @@
             <div class="bg-slate-50 p-2 rounded-xl border border-slate-100"><span class="text-slate-400 block text-[10px]">쇼링 / B/K</span><span class="font-bold text-slate-800">${shoring} / ${bkNo}</span></div>
             <div class="bg-slate-50 p-2 rounded-xl border border-slate-100"><span class="text-slate-400 block text-[10px]">비고</span><span class="font-bold text-slate-800 truncate block">${note}</span></div>
           </div>
+
+          <!-- 상태별 쇼링 번호 표시 영역 -->
+          ${shoringDisplayHtml}
 
           <div class="grid grid-cols-2 gap-2 pt-1">
             <select onchange="updateExportStatusOrWorker(this, 33, 'status', ${idx})" class="w-full border border-slate-200 bg-white font-bold rounded-xl px-3 py-2 text-xs outline-none">
@@ -500,6 +552,37 @@
 
     function closePhotoModal() {
       document.getElementById('photo-viewer-modal').classList.add('hidden');
+    }
+
+    const shoringPhoneMap = {
+      "SH": "010-8377-8779",
+      "로케트": "051-442-0058",
+      "로켓트": "051-442-0058",
+      "하람": "010-9419-2245",
+      "더옥": "051-971-6949",
+      "우영": "051-643-2333",
+      "신성": "051-634-4353",
+      "신성TLS": "051-634-4353",
+      "동해": "051-464-8588",
+      "카스": "051-463-9525",
+      "하나": "051-753-3618",
+      "대명": "051-637-4667",
+      "SL": "010-8014-4276",
+      "씨어코리아": "010-2515-4542",
+      "씨어": "010-2515-4542",
+      "세아": "010-2515-4542",
+      "제이원": "010-9649-9399"
+    };
+
+    function getPhoneNumberByShoring(shoringText) {
+      if (!shoringText) return null;
+      const clean = shoringText.trim();
+      for (const [key, phone] of Object.entries(shoringPhoneMap)) {
+        if (clean.toUpperCase().includes(key.toUpperCase())) {
+          return phone;
+        }
+      }
+      return null;
     }
 
     setInterval(() => {
