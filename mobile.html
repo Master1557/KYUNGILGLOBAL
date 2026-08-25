@@ -14,9 +14,25 @@
       font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
       background-color: #f8fafc;
     }
+    @keyframes bounce-short {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+    .animate-notification {
+      animation: bounce-short 0.5s ease-in-out infinite;
+    }
   </style>
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800 pb-16">
+
+  <!-- 실시간 신규 접수 알림 팝업 배너 -->
+  <div id="new-order-alert" class="fixed top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-5 py-3 rounded-2xl shadow-2xl z-50 hidden flex items-center gap-3 border border-blue-400">
+    <i data-lucide="bell" class="w-5 h-5 animate-bounce"></i>
+    <div>
+      <p class="text-xs font-black">새로운 기사님 접수!</p>
+      <p id="new-order-text" class="text-[11px] font-medium opacity-90">확인해보세요.</p>
+    </div>
+  </div>
 
   <!-- Mobile Header -->
   <header class="bg-slate-900 text-white px-4 py-3.5 flex justify-between items-center shadow-md sticky top-0 z-40">
@@ -143,11 +159,30 @@
     let exportStatusMap = {};
     let lastSheetRows = [];
     let lastRawDataString = "";
+    let isInitialDashboardLoad = true; // 최초 접속 시 무더기 알림 방지용
 
     lucide.createIcons();
 
+    // 신규 접수 감지 및 알림 트리거
     dashboardRef.on('value', (snapshot) => {
-      dashboardMap = snapshot.val() || {};
+      const newData = snapshot.val() || {};
+      
+      if (!isInitialDashboardLoad) {
+        const oldKeys = Object.keys(dashboardMap);
+        const newKeys = Object.keys(newData);
+        
+        // 새로운 키(접수 건)가 추가되었을 때 알림 발동
+        if (newKeys.length > oldKeys.length) {
+          const latestKey = newKeys[newKeys.length - 1];
+          const latestItem = newData[latestKey];
+          if (latestItem) {
+            showNewOrderAlert(`[${latestItem.workType || '접수'}] 화주명: ${latestItem.clientName || '미정'} (${latestItem.carNumber || ''})`);
+          }
+        }
+      }
+
+      dashboardMap = newData;
+      isInitialDashboardLoad = false;
       renderMobileDashboard(dashboardMap);
     });
 
@@ -161,6 +196,18 @@
       exportStatusMap = snapshot.val() || {};
       if (lastSheetRows.length > 0) renderMobileExportCards(lastSheetRows);
     });
+
+    function showNewOrderAlert(textMsg) {
+      const alertBox = document.getElementById('new-order-alert');
+      const textEl = document.getElementById('new-order-text');
+      textEl.innerText = textMsg;
+      alertBox.classList.remove('hidden');
+
+      // 4초 뒤 알림 자동 숨김
+      setTimeout(() => {
+        alertBox.classList.add('hidden');
+      }, 4000);
+    }
 
     function switchMobileTab(tabName) {
       localStorage.setItem('currentMobileTab', tabName);
@@ -462,7 +509,6 @@
         const p1Data = exportPhotosMap[`row_${idx}_photo_1`];
         const p2Data = exportPhotosMap[`row_${idx}_photo_2`];
 
-        // 작업완료 상태여도 아래쪽에 별도의 쇼링 박스를 띄우지 않고, 항상 위쪽 '쇼링 / B/K' 칸에 번호가 유지되도록 수정 완료
         let shoringDisplayHtml = '';
         if (shoring.toUpperCase() === 'X') {
           shoringDisplayHtml = `<div class="bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold p-2 rounded-xl text-center">쇼링 X 씰 채결부탁드려요</div>`;
@@ -500,13 +546,13 @@
           ${shoringDisplayHtml}
 
           <div class="grid grid-cols-2 gap-2 pt-1">
-            <select onchange="updateExportStatusOrWorker(this, 33, 'status', ${idx})" class="w-full border border-slate-200 bg-white font-bold rounded-xl px-3 py-2 text-xs outline-none">
+            <select onchange="updateExportStatusOrWorker(this, 33, 'status', ${idx})" class="w-full border border-slate-200 bg-white font-bold rounded-lg px-3 py-2 text-xs outline-none">
               <option value="NONE" ${savedStatus === 'NONE' ? 'selected' : ''}>상태: 선택 안함</option>
               <option value="TALLY" ${savedStatus === 'TALLY' ? 'selected' : ''}>TALLY완료</option>
               <option value="VANNING" ${savedStatus === 'VANNING' ? 'selected' : ''}>적입중</option>
               <option value="DONE" ${savedStatus === 'DONE' ? 'selected' : ''}>작업완료</option>
             </select>
-            <select onchange="updateExportStatusOrWorker(this, 34, 'worker', ${idx})" class="w-full border border-slate-200 bg-white font-bold rounded-xl px-3 py-2 text-xs outline-none">
+            <select onchange="updateExportStatusOrWorker(this, 34, 'worker', ${idx})" class="w-full border border-slate-200 bg-white font-bold rounded-lg px-3 py-2 text-xs outline-none">
               ${workerOptions}
             </select>
           </div>
@@ -563,7 +609,7 @@
     }, 4000);
 
     window.addEventListener('DOMContentLoaded', () => {
-      const lastTab = localStorage.getItem('currentMobileTab') || 'dashboard';
+      const lastTab = localStorage.-getItem('currentMobileTab') || 'dashboard';
       switchMobileTab(lastTab);
 
       const savedUrl = localStorage.getItem('sheetWebAppUrl');
