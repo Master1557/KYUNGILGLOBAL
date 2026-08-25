@@ -236,6 +236,25 @@
       }
     }
 
+    // 쇼링 데이터에서 날짜 형식(ISO 문자열 등)을 걸러내고 올바른 이름만 추출하는 정제 함수
+    function cleanShoringText(rawText) {
+      if (!rawText) return '-';
+      let text = rawText.toString().trim();
+      // 날짜 패턴(예: 2026-08-27T15:00:00.000Z 등)이 포함되어 있다면 제거하거나 비움
+      if (text.includes('T') && (text.includes('Z') || text.includes('+'))) {
+        // 만약 슬래시로 구분되어 날짜와 함께 있다면 쇼링 이름만 추출 시도
+        const parts = text.split('/');
+        for (let p of parts) {
+          let trimmed = p.trim();
+          if (!trimmed.includes('T') && trimmed.length > 0) {
+            return trimmed;
+          }
+        }
+        return '-';
+      }
+      return text;
+    }
+
     const shoringPhoneMap = {
       "SH": "010-8377-8779",
       "로케트": "051-442-0058",
@@ -257,8 +276,8 @@
     };
 
     function getPhoneNumberByShoring(shoringText) {
-      if (!shoringText) return null;
-      const clean = shoringText.trim();
+      const clean = cleanShoringText(shoringText);
+      if (clean === '-') return null;
       for (const [key, phone] of Object.entries(shoringPhoneMap)) {
         if (clean.toUpperCase().includes(key.toUpperCase())) {
           return phone;
@@ -422,7 +441,6 @@
       lucide.createIcons();
     }
 
-    // 2. 수출 현황판 카드 렌더링 (작업 상태에 따른 쇼링 번호 표시 및 전화 연결 기능 추가)
     function renderMobileExportCards(rows) {
       const container = document.getElementById('mobile-export-container');
       if (!container) return;
@@ -440,7 +458,9 @@
         const seal = row[3] || '-';
         const client = row[4] || '화주 미정';
         const qty = row[7] || '0';
-        const shoring = (row[11] || '').toString().trim();
+        
+        // 쇼링 텍스트 정제 적용
+        const shoring = cleanShoringText(row[11]);
         const note = row[13] || '-';
         const bkNo = row[14] || '-';
 
@@ -456,7 +476,6 @@
         const p1Data = exportPhotosMap[`row_${idx}_photo_1`];
         const p2Data = exportPhotosMap[`row_${idx}_photo_2`];
 
-        // 쇼링 번호 매칭 로직
         let shoringDisplayHtml = '';
         if (savedStatus === 'DONE' || savedStatus === '작업완료') {
           shoringDisplayHtml = `<div class="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold p-2 rounded-xl text-center">작업 완료</div>`;
@@ -493,7 +512,6 @@
             <div class="bg-slate-50 p-2 rounded-xl border border-slate-100"><span class="text-slate-400 block text-[10px]">비고</span><span class="font-bold text-slate-800 truncate block">${note}</span></div>
           </div>
 
-          <!-- 상태별 쇼링 번호 표시 영역 -->
           ${shoringDisplayHtml}
 
           <div class="grid grid-cols-2 gap-2 pt-1">
@@ -552,37 +570,6 @@
 
     function closePhotoModal() {
       document.getElementById('photo-viewer-modal').classList.add('hidden');
-    }
-
-    const shoringPhoneMap = {
-      "SH": "010-8377-8779",
-      "로케트": "051-442-0058",
-      "로켓트": "051-442-0058",
-      "하람": "010-9419-2245",
-      "더옥": "051-971-6949",
-      "우영": "051-643-2333",
-      "신성": "051-634-4353",
-      "신성TLS": "051-634-4353",
-      "동해": "051-464-8588",
-      "카스": "051-463-9525",
-      "하나": "051-753-3618",
-      "대명": "051-637-4667",
-      "SL": "010-8014-4276",
-      "씨어코리아": "010-2515-4542",
-      "씨어": "010-2515-4542",
-      "세아": "010-2515-4542",
-      "제이원": "010-9649-9399"
-    };
-
-    function getPhoneNumberByShoring(shoringText) {
-      if (!shoringText) return null;
-      const clean = shoringText.trim();
-      for (const [key, phone] of Object.entries(shoringPhoneMap)) {
-        if (clean.toUpperCase().includes(key.toUpperCase())) {
-          return phone;
-        }
-      }
-      return null;
     }
 
     setInterval(() => {
