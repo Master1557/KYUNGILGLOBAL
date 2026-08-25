@@ -38,6 +38,7 @@
       <button id="nav-dashboard-btn" onclick="switchTab('dashboard')" class="px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition bg-blue-600 text-white shadow-sm">
         <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
         <span>오퍼레이터 대시보드</span>
+        <!-- ★ 이곳에 대기 중 개수가 표시되도록 수정됨 -->
         <span id="nav-badge" class="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full font-black">0</span>
       </button>
 
@@ -312,6 +313,12 @@
     function renderDashboardTable(data) {
       const tbody = document.getElementById('table-body');
       if (!tbody) return;
+
+      const activeEl = document.activeElement;
+      if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT') && activeEl.closest('#tab-export')) {
+        return; 
+      }
+
       tbody.innerHTML = '';
       const keys = Object.keys(data);
       if (keys.length === 0) {
@@ -372,7 +379,9 @@
       document.getElementById('count-waiting').innerText = waiting;
       document.getElementById('count-progress').innerText = progress;
       document.getElementById('count-completed').innerText = completed;
-      document.getElementById('nav-badge').innerText = total;
+      
+      // ★ 상단 탭 빨간색 뱃지에 전체 개수(total) 대신 대기 중(waiting) 숫자가 들어가도록 수정
+      document.getElementById('nav-badge').innerText = waiting;
 
       currentWaitingCount = waiting;
       const kioskHeaderQueue = document.getElementById('kiosk-header-queue-count');
@@ -621,7 +630,6 @@
       document.body.appendChild(script);
     }
 
-    // 수출 현황판 셀 수정 시 구글 시트로 자동 저장하는 함수
     async function updateExportSheetField(element, colIndex) {
       const webAppUrl = document.getElementById('sheet-url-input').value.trim();
       if (!webAppUrl) return;
@@ -693,7 +701,6 @@
       const tbody = document.getElementById('export-table-body');
       if (!tbody) return;
 
-      // ★ 핵심 수정: 현재 사용자가 입력(포커스) 중인 필드가 있다면, 리프레시 도중 글자가 날아가지 않도록 즉시 중단 (완벽 방어)
       const activeEl = document.activeElement;
       if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT') && activeEl.closest('#tab-export')) {
         return; 
@@ -714,7 +721,7 @@
           <td class="py-3 px-3 text-center bg-green-100/60 border-r font-bold text-sm">${row[0] || (idx + 1)}</td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[1] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs" onchange="updateExportSheetField(this, 2)"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[2] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 3)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[3] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs" onchange="updateExportSheetField(this, 4)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[3] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs" onchange="updateExportSheetField(this, 4)"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[4] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 5)"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[5] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs" onchange="updateExportSheetField(this, 6)"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[6] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs" onchange="updateExportSheetField(this, 7)"></td>
@@ -807,11 +814,9 @@
       selectEl.className = "export-status-select w-full border border-slate-200 bg-white text-slate-700 font-bold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer";
     }
 
-    // ★ 자동 동기화 주기를 3초(3000ms)로 안정화하고, 타이핑 방어 로직 강화
     setInterval(() => {
       const savedUrl = localStorage.getItem('sheetWebAppUrl');
       if (savedUrl) {
-        // 내가 입력 중인지 한 번 더블 체크
         const activeEl = document.activeElement;
         const isEditing = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT') && activeEl.closest('#tab-export');
         
@@ -829,7 +834,7 @@
           document.body.appendChild(script);
         }
       }
-    }, 7000); // 7초 주기 (1초는 구글 서버 부하 및 타이핑 딜레이를 유발하므로 3초가 가장 안정적입니다)
+    }, 3000);
 
     window.addEventListener('DOMContentLoaded', () => {
       if (isKioskOnlyMode) {
