@@ -343,7 +343,6 @@
       inputEl.value = '';
     }
 
-    // 1. 오퍼레이터 대시보드 카드 렌더링 (삭제 버튼 제거 완료)
     function renderMobileDashboard(data) {
       const container = document.getElementById('mobile-dashboard-container');
       if (!container) return;
@@ -463,10 +462,9 @@
         const p1Data = exportPhotosMap[`row_${idx}_photo_1`];
         const p2Data = exportPhotosMap[`row_${idx}_photo_2`];
 
+        // 작업완료 상태여도 아래쪽에 별도의 쇼링 박스를 띄우지 않고, 항상 위쪽 '쇼링 / B/K' 칸에 번호가 유지되도록 수정 완료
         let shoringDisplayHtml = '';
-        if (savedStatus === 'DONE' || savedStatus === '작업완료') {
-          shoringDisplayHtml = `<div class="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold p-2 rounded-xl text-center">작업 완료</div>`;
-        } else if (shoring.toUpperCase() === 'X') {
+        if (shoring.toUpperCase() === 'X') {
           shoringDisplayHtml = `<div class="bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold p-2 rounded-xl text-center">쇼링 X 씰 채결부탁드려요</div>`;
         } else if (savedStatus === 'VANNING') {
           const matchedPhone = getPhoneNumberByShoring(shoring);
