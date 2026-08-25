@@ -692,6 +692,13 @@
     function renderExportTable(rows) {
       const tbody = document.getElementById('export-table-body');
       if (!tbody) return;
+
+      // ★ 핵심 수정: 현재 사용자가 입력(포커스) 중인 필드가 있다면, 리프레시 도중 글자가 날아가지 않도록 즉시 중단 (완벽 방어)
+      const activeEl = document.activeElement;
+      if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT') && activeEl.closest('#tab-export')) {
+        return; 
+      }
+
       tbody.innerHTML = '';
       if (rows.length === 0) {
         tbody.innerHTML = `<tr><td colspan="16" class="text-center py-8 text-slate-400 font-semibold">시트에 데이터가 없습니다.</td></tr>`;
@@ -800,11 +807,11 @@
       selectEl.className = "export-status-select w-full border border-slate-200 bg-white text-slate-700 font-bold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer";
     }
 
-    // ★ 10초마다 자동으로 구글 시트 데이터를 백그라운드에서 동기화하는 로직 추가 완료
+    // ★ 자동 동기화 주기를 3초(3000ms)로 안정화하고, 타이핑 방어 로직 강화
     setInterval(() => {
       const savedUrl = localStorage.getItem('sheetWebAppUrl');
       if (savedUrl) {
-        // 사용자가 현재 수출 현황판 테이블 안에서 글자를 입력(포커스) 중이 아닐 때만 자동 갱신
+        // 내가 입력 중인지 한 번 더블 체크
         const activeEl = document.activeElement;
         const isEditing = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT') && activeEl.closest('#tab-export');
         
@@ -822,7 +829,7 @@
           document.body.appendChild(script);
         }
       }
-    }, 10000); // 10초 주기
+    }, 3000); // 3초 주기 (1초는 구글 서버 부하 및 타이핑 딜레이를 유발하므로 3초가 가장 안정적입니다)
 
     window.addEventListener('DOMContentLoaded', () => {
       if (isKioskOnlyMode) {
