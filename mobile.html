@@ -145,7 +145,6 @@
 
     lucide.createIcons();
 
-    // 실시간 데이터 수신 시 화면 즉시 렌더링
     dashboardRef.on('value', (snapshot) => {
       dashboardMap = snapshot.val() || {};
       renderMobileDashboard(dashboardMap);
@@ -303,7 +302,7 @@
       inputEl.value = '';
     }
 
-    // 1. 오퍼레이터 대시보드 카드 렌더링
+    // 1. 오퍼레이터 대시보드 카드 렌더링 (비고 칸 포함)
     function renderMobileDashboard(data) {
       const container = document.getElementById('mobile-dashboard-container');
       if (!container) return;
@@ -348,6 +347,12 @@
             <div class="bg-slate-50 p-2 rounded-xl border border-slate-100"><span class="text-slate-400 block text-[10px]">연락처</span><span class="font-bold text-slate-800">${item.phoneNumber || ''}</span></div>
             <div class="bg-slate-50 p-2 rounded-xl border border-slate-100"><span class="text-slate-400 block text-[10px]">수량 / 시간</span><span class="font-bold text-slate-800">${item.quantity || 0}박스 / ${item.timeStr || ''}</span></div>
             <div class="bg-slate-50 p-2 rounded-xl border border-slate-100"><span class="text-slate-400 block text-[10px]">담당자</span><input type="text" value="${item.manager || ''}" onchange="updateDashboardField('${key}', 'manager', this.value)" class="w-full bg-white border rounded px-1.5 py-1 text-xs font-bold mt-0.5"></div>
+          </div>
+
+          <!-- 비고란 추가 -->
+          <div class="bg-slate-50 p-2 rounded-xl border border-slate-100 text-xs">
+            <span class="text-slate-400 block text-[10px] mb-0.5">비고</span>
+            <input type="text" value="${item.note || ''}" onchange="updateDashboardField('${key}', 'note', this.value)" class="w-full bg-white border rounded px-2 py-1 text-xs font-medium">
           </div>
 
           <div class="grid grid-cols-2 gap-2 pt-1">
