@@ -21,7 +21,6 @@
   <!-- Mobile Header -->
   <header class="bg-slate-900 text-white px-4 py-3.5 flex justify-between items-center shadow-md sticky top-0 z-40">
     <div class="flex items-center gap-2.5">
-      <!-- PC 버전과 동일한 로고 이미지 사용 -->
       <img src="logo.png" alt="경일글로벌 로고" class="h-7 w-auto object-contain" onerror="this.style.display='none'; document.getElementById('header-fallback-icon').style.display='flex';">
       <div id="header-fallback-icon" class="hidden bg-blue-600 text-white p-1.5 rounded-lg items-center justify-center">
         <i data-lucide="truck" class="w-4 h-4"></i>
@@ -163,7 +162,9 @@
       if (lastSheetRows.length > 0) renderMobileExportCards(lastSheetRows);
     });
 
+    // 탭 전환 시 localStorage에 현재 위치 저장 (새로고침 유지용)
     function switchMobileTab(tabName) {
+      localStorage.setItem('currentMobileTab', tabName);
       ['dashboard', 'export'].forEach(t => {
         document.getElementById(`mobile-tab-${t}`).className = (t === tabName) ? "max-w-md mx-auto px-3 py-4 space-y-3 block" : "hidden";
         const btn = document.getElementById(`nav-${t}-tab`);
@@ -304,7 +305,6 @@
       inputEl.value = '';
     }
 
-    // 1. 오퍼레이터 대시보드 카드 렌더링 (수량 뒤 '박스' 제거 완료)
     function renderMobileDashboard(data) {
       const container = document.getElementById('mobile-dashboard-container');
       if (!container) return;
@@ -347,7 +347,6 @@
           <div class="grid grid-cols-2 gap-2 text-xs">
             <div class="bg-slate-50 p-2 rounded-xl border border-slate-100"><span class="text-slate-400 block text-[10px]">화주명</span><input type="text" value="${item.clientName || ''}" onchange="updateDashboardField('${key}', 'clientName', this.value)" class="w-full bg-white border rounded px-1.5 py-1 text-xs font-bold mt-0.5"></div>
             <div class="bg-slate-50 p-2 rounded-xl border border-slate-100"><span class="text-slate-400 block text-[10px]">연락처</span><span class="font-bold text-slate-800">${item.phoneNumber || ''}</span></div>
-            <!-- '박스' 글자 제거 완료 -->
             <div class="bg-slate-50 p-2 rounded-xl border border-slate-100"><span class="text-slate-400 block text-[10px]">수량 / 시간</span><span class="font-bold text-slate-800">${item.quantity || 0} / ${item.timeStr || ''}</span></div>
             <div class="bg-slate-50 p-2 rounded-xl border border-slate-100"><span class="text-slate-400 block text-[10px]">담당자</span><input type="text" value="${item.manager || ''}" onchange="updateDashboardField('${key}', 'manager', this.value)" class="w-full bg-white border rounded px-1.5 py-1 text-xs font-bold mt-0.5"></div>
           </div>
@@ -388,7 +387,6 @@
       lucide.createIcons();
     }
 
-    // 2. 수출 현황판 카드 렌더링
     function renderMobileExportCards(rows) {
       const container = document.getElementById('mobile-export-container');
       if (!container) return;
@@ -504,6 +502,10 @@
     }, 4000);
 
     window.addEventListener('DOMContentLoaded', () => {
+      // 마지막으로 보던 탭 위치 복원 (기본값: dashboard)
+      const lastTab = localStorage.getItem('currentMobileTab') || 'dashboard';
+      switchMobileTab(lastTab);
+
       const savedUrl = localStorage.getItem('sheetWebAppUrl');
       if (savedUrl) {
         document.getElementById('sheet-url-input').value = savedUrl;
