@@ -1,0 +1,63 @@
+name: Build iOS App
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-ios:
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Create package.json
+        run: |
+          npm init -y
+          npm install @capacitor/core @capacitor/cli @capacitor/ios
+
+      - name: Prepare web files
+        run: |
+          mkdir -p www
+          cp mobile.html www/index.html
+          cp logo.png www/logo.png
+
+      - name: Initialize Capacitor
+        run: |
+          npx cap init "경일글로벌" "com.kyungilglobal.app" \
+            --web-dir www
+
+      - name: Add iOS
+        run: npx cap add ios
+
+      - name: Sync iOS
+        run: npx cap sync ios
+
+      - name: Build iOS
+        run: |
+          xcodebuild \
+            -workspace ios/App/App.xcworkspace \
+            -scheme App \
+            -sdk iphonesimulator \
+            -configuration Debug \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Package iOS App
+        run: |
+          cd build/Build/Products/Debug-iphonesimulator
+          zip -r ../../../../../kyungilglobal-ios-simulator.zip App.app
+
+      - name: Upload iOS App
+        uses: actions/upload-artifact@v4
+        with:
+          name: kyungilglobal-ios
+          path: kyungilglobal-ios-simulator.zip
