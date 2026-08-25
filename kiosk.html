@@ -247,6 +247,34 @@
           >
         </div>
 
+        <!-- Note / Cargo name -->
+        <div>
+          <label for="note" class="block text-base font-bold text-slate-300 mb-2">
+            비고 (화물명)
+          </label>
+          <input
+            type="text"
+            id="note"
+            autocomplete="off"
+            placeholder="EX. 화물명"
+            class="touch-input w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-4 text-white font-semibold outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+          >
+        </div>
+
+        <!-- 담당자 -->
+        <div>
+          <label for="manager" class="block text-base font-bold text-slate-300 mb-2">
+            담당자
+          </label>
+          <input
+            type="text"
+            id="manager"
+            autocomplete="off"
+            placeholder="모르시면 비워주세요."
+            class="touch-input w-full bg-slate-800 border border-slate-700 rounded-2xl px-5 py-4 text-white font-semibold outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+          >
+        </div>
+
         <!-- Submit -->
         <button
           id="submit-button"
@@ -399,6 +427,12 @@
       const quantity =
         document.getElementById('quantity').value.trim();
 
+      const note =
+        document.getElementById('note').value.trim();
+
+      const manager =
+        document.getElementById('manager').value.trim();
+
       // 기본 브라우저 validation
       const form = document.getElementById('kiosk-form');
 
@@ -451,12 +485,12 @@
         await dashboardRef.push({
           workType,
           timeStr,
-          manager: "미정",
+          manager: manager || "미정",
           carNumber,
           phoneNumber,
           clientName,
           quantity: quantityNumber,
-          note: "키오스크 신규 접수",
+          note: note || "키오스크 신규 접수",
           status: "WAITING",
           worker: "",
           timestamp: firebase.database.ServerValue.TIMESTAMP
