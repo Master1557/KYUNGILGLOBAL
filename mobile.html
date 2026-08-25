@@ -214,7 +214,6 @@
 
     function updateDashboardField(key, field, val) { dashboardRef.child(key).update({ [field]: val }); }
     function updateDashboardStatus(key, val) { dashboardRef.child(key).update({ status: val }); }
-    function deleteDashboardRow(key) { if (confirm("접수 건을 삭제하시겠습니까?")) dashboardRef.child(key).remove(); }
 
     async function updateExportStatusOrWorker(element, colIndex, fieldName, rowIndex) {
       const webAppUrl = document.getElementById('sheet-url-input').value.trim();
@@ -236,20 +235,10 @@
       }
     }
 
-    // 쇼링 데이터에서 날짜 형식(ISO 문자열 등)을 걸러내고 올바른 이름만 추출하는 정제 함수
     function cleanShoringText(rawText) {
       if (!rawText) return '-';
       let text = rawText.toString().trim();
-      // 날짜 패턴(예: 2026-08-27T15:00:00.000Z 등)이 포함되어 있다면 제거하거나 비움
-      if (text.includes('T') && (text.includes('Z') || text.includes('+'))) {
-        // 만약 슬래시로 구분되어 날짜와 함께 있다면 쇼링 이름만 추출 시도
-        const parts = text.split('/');
-        for (let p of parts) {
-          let trimmed = p.trim();
-          if (!trimmed.includes('T') && trimmed.length > 0) {
-            return trimmed;
-          }
-        }
+      if (text.includes('T') && (text.includes('Z') || text.includes('+') || text.includes(':'))) {
         return '-';
       }
       return text;
@@ -354,6 +343,7 @@
       inputEl.value = '';
     }
 
+    // 1. 오퍼레이터 대시보드 카드 렌더링 (삭제 버튼 제거 완료)
     function renderMobileDashboard(data) {
       const container = document.getElementById('mobile-dashboard-container');
       if (!container) return;
@@ -392,7 +382,6 @@
               <span class="bg-blue-600 text-white font-black text-[10px] px-2 py-0.5 rounded-md">${item.workType || '하차(입고)'}</span>
               <span class="font-black text-slate-900 text-xs">${item.carNumber || ''}</span>
             </div>
-            <button onclick="deleteDashboardRow('${key}')" class="text-red-500 hover:text-red-700 p-1 cursor-pointer"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
           </div>
 
           <div class="grid grid-cols-2 gap-2 text-xs">
@@ -458,9 +447,7 @@
         const seal = row[3] || '-';
         const client = row[4] || '화주 미정';
         const qty = row[7] || '0';
-        
-        // 쇼링 텍스트 정제 적용
-        const shoring = cleanShoringText(row[11]);
+        const shoring = cleanShoringText(row[12]);
         const note = row[13] || '-';
         const bkNo = row[14] || '-';
 
