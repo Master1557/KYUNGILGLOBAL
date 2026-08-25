@@ -145,12 +145,13 @@
               <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[150px]">B/K NO.</th>
               <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[130px]">담당자</th>
               <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[140px]">작업 상태</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[140px]">작업자</th>
               <th class="py-3 px-3 text-center min-w-[210px]">작업사진 & 쇼링번호</th>
             </tr>
           </thead>
           <tbody id="export-table-body" class="divide-y divide-slate-200 font-medium text-xs">
             <tr>
-              <td colspan="16" class="text-center py-12 text-slate-400 font-semibold">
+              <td colspan="17" class="text-center py-12 text-slate-400 font-semibold">
                 우측 상단 톱니바퀴(⚙️) 버튼을 눌러 구글 Apps Script 웹 앱 URL을 입력해 주세요.
               </td>
             </tr>
@@ -334,7 +335,6 @@
         const photoGroupClass = isCompleted ? '' : 'hidden';
         const defaultTextClass = isCompleted ? 'hidden' : '';
 
-        // 작업자 목록 옵션 정의
         const workerList = ["조인효", "윤동현", "이예성", "김찬양"];
         let workerOptions = `<option value="">선택 안함</option>`;
         workerList.forEach(w => {
@@ -719,7 +719,7 @@
 
       tbody.innerHTML = '';
       if (rows.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="16" class="text-center py-8 text-slate-400 font-semibold">시트에 데이터가 없습니다.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="17" class="text-center py-8 text-slate-400 font-semibold">시트에 데이터가 없습니다.</td></tr>`;
         return;
       }
 
@@ -728,19 +728,26 @@
         const tr = document.createElement('tr');
         tr.className = "hover:bg-slate-50 transition";
         
+        const workerList = ["조인효", "윤동현", "이예성", "김찬양"];
+        let exportWorkerOptions = `<option value="">선택 안함</option>`;
+        workerList.forEach(w => {
+          const selected = (row[16] || '') === w ? 'selected' : '';
+          exportWorkerOptions += `<option value="${w}" ${selected}>${w}</option>`;
+        });
+
         tr.innerHTML = `
           <td class="py-3 px-3 text-center bg-green-100/60 border-r font-bold text-sm">${row[0] || (idx + 1)}</td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[1] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs" onchange="updateExportSheetField(this, 2)"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[2] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 3)"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[3] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs" onchange="updateExportSheetField(this, 4)"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[4] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 5)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[5] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs" onchange="updateExportSheetField(this, 6)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[6] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs" onchange="updateExportSheetField(this, 7)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[5] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs" onchange="updateExportSheetField(this, 6)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[6] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs" onchange="updateExportSheetField(this, 7)"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[7] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 8)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[8] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs" onchange="updateExportSheetField(this, 9)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[11] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs" onchange="updateExportSheetField(this, 12)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[8] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs" onchange="updateExportSheetField(this, 9)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[11] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs" onchange="updateExportSheetField(this, 12)"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${shoringVal}" class="shoring-input w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 13); updateRowCondition(this);"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[13] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs" onchange="updateExportSheetField(this, 14)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[13] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs" onchange="updateExportSheetField(this, 14)"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[14] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 15)"></td>
           <td class="py-3 px-3 border-r min-w-[140px]"><input type="text" value="${row[15] || ''}" class="w-full text-center bg-slate-50 border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 16)"></td>
           <td class="py-3 px-3 border-r min-w-[150px]">
@@ -749,6 +756,11 @@
               <option value="TALLY">TALLY완료</option>
               <option value="VANNING">적입중</option>
               <option value="DONE">작업완료</option>
+            </select>
+          </td>
+          <td class="py-3 px-3 border-r min-w-[140px]">
+            <select class="export-worker-select w-full border bg-white text-slate-700 font-bold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer" onchange="updateExportSheetField(this, 18)">
+              ${exportWorkerOptions}
             </select>
           </td>
           <td class="py-3 px-3 min-w-[210px] text-center">
