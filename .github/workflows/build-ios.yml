@@ -54,10 +54,16 @@ jobs:
       - name: Package iOS App
         run: |
           cd build/Build/Products/Debug-iphonesimulator
-          zip -r ../../../../../kyungilglobal-ios-simulator.zip App.app
+          zip -r "$GITHUB_WORKSPACE/kyungilglobal-ios-simulator.zip" App.app
+
+      - name: Check Artifact
+        run: |
+          echo "=== Artifact 확인 ==="
+          ls -lh "$GITHUB_WORKSPACE/kyungilglobal-ios-simulator.zip"
 
       - name: Upload iOS App
         uses: actions/upload-artifact@v4
         with:
           name: kyungilglobal-ios
-          path: kyungilglobal-ios-simulator.zip
+          path: ${{ github.workspace }}/kyungilglobal-ios-simulator.zip
+          if-no-files-found: error
