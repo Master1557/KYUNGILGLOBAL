@@ -20,9 +20,11 @@
 
   <!-- Mobile Header -->
   <header class="bg-slate-900 text-white px-4 py-3.5 flex justify-between items-center shadow-md sticky top-0 z-40">
-    <div class="flex items-center gap-2">
-      <div class="bg-blue-600 text-white p-1.5 rounded-lg flex items-center justify-center">
-        <i data-lucide="truck" class="w-5 h-5"></i>
+    <div class="flex items-center gap-2.5">
+      <!-- PC 버전과 동일한 로고 이미지 사용 -->
+      <img src="logo.png" alt="경일글로벌 로고" class="h-7 w-auto object-contain" onerror="this.style.display='none'; document.getElementById('header-fallback-icon').style.display='flex';">
+      <div id="header-fallback-icon" class="hidden bg-blue-600 text-white p-1.5 rounded-lg items-center justify-center">
+        <i data-lucide="truck" class="w-4 h-4"></i>
       </div>
       <span class="text-sm font-black tracking-tight">경일글로벌 모바일</span>
     </div>
@@ -302,7 +304,7 @@
       inputEl.value = '';
     }
 
-    // 1. 오퍼레이터 대시보드 카드 렌더링 (비고 칸 포함)
+    // 1. 오퍼레이터 대시보드 카드 렌더링 (수량 뒤 '박스' 제거 완료)
     function renderMobileDashboard(data) {
       const container = document.getElementById('mobile-dashboard-container');
       if (!container) return;
@@ -345,11 +347,11 @@
           <div class="grid grid-cols-2 gap-2 text-xs">
             <div class="bg-slate-50 p-2 rounded-xl border border-slate-100"><span class="text-slate-400 block text-[10px]">화주명</span><input type="text" value="${item.clientName || ''}" onchange="updateDashboardField('${key}', 'clientName', this.value)" class="w-full bg-white border rounded px-1.5 py-1 text-xs font-bold mt-0.5"></div>
             <div class="bg-slate-50 p-2 rounded-xl border border-slate-100"><span class="text-slate-400 block text-[10px]">연락처</span><span class="font-bold text-slate-800">${item.phoneNumber || ''}</span></div>
-            <div class="bg-slate-50 p-2 rounded-xl border border-slate-100"><span class="text-slate-400 block text-[10px]">수량 / 시간</span><span class="font-bold text-slate-800">${item.quantity || 0}박스 / ${item.timeStr || ''}</span></div>
+            <!-- '박스' 글자 제거 완료 -->
+            <div class="bg-slate-50 p-2 rounded-xl border border-slate-100"><span class="text-slate-400 block text-[10px]">수량 / 시간</span><span class="font-bold text-slate-800">${item.quantity || 0} / ${item.timeStr || ''}</span></div>
             <div class="bg-slate-50 p-2 rounded-xl border border-slate-100"><span class="text-slate-400 block text-[10px]">담당자</span><input type="text" value="${item.manager || ''}" onchange="updateDashboardField('${key}', 'manager', this.value)" class="w-full bg-white border rounded px-1.5 py-1 text-xs font-bold mt-0.5"></div>
           </div>
 
-          <!-- 비고란 추가 -->
           <div class="bg-slate-50 p-2 rounded-xl border border-slate-100 text-xs">
             <span class="text-slate-400 block text-[10px] mb-0.5">비고</span>
             <input type="text" value="${item.note || ''}" onchange="updateDashboardField('${key}', 'note', this.value)" class="w-full bg-white border rounded px-2 py-1 text-xs font-medium">
