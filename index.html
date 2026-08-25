@@ -96,7 +96,7 @@
               <th class="py-3.5 px-4 nowrap-cell min-w-[130px]">차량번호</th>
               <th class="py-3.5 px-4 nowrap-cell min-w-[140px]">기사 연락처</th>
               <th class="py-3.5 px-4 min-w-[180px] nowrap-cell">화주명</th>
-              <th class="py-3.5 px-4 text-center nowrap-cell min-w-[80px]">수량</th>
+              <th class="py-3.5 px-4 text-center nowrap-cell min-w-[90px]">수량</th>
               <th class="py-3.5 px-4 min-w-[220px] nowrap-cell">비고</th>
               <th class="py-3.5 px-4 text-center min-w-[130px] nowrap-cell">상태</th>
               <th class="py-3.5 px-4 text-center min-w-[130px] nowrap-cell">작업자</th>
@@ -355,7 +355,6 @@
           workerOptions += `<option value="${w}" ${selected}>${w}</option>`;
         });
 
-        // 대시보드 항목별 사진 데이터 가져오기
         const p1Data = exportPhotosMap[`dash_${key}_photo_1`];
         const p2Data = exportPhotosMap[`dash_${key}_photo_2`];
 
@@ -385,7 +384,7 @@
           <td class="py-3.5 px-4 font-bold min-w-[130px] nowrap-cell">${item.carNumber || ''}</td>
           <td class="py-3.5 px-4 text-slate-500 min-w-[140px] nowrap-cell">${item.phoneNumber || ''}</td>
           <td class="py-3.5 px-4 min-w-[180px]"><input type="text" value="${item.clientName || ''}" onchange="updateFirebaseField('${key}', 'clientName', this.value)" class="w-full border rounded px-2.5 py-1.5 text-xs"></td>
-          <td class="py-3.5 px-4 text-center font-bold text-blue-600">${item.quantity || 0}</td>
+          <td class="py-3.5 px-4 text-center min-w-[90px]"><input type="number" value="${item.quantity || 0}" min="1" onchange="updateFirebaseField('${key}', 'quantity', this.value)" class="w-full text-center border rounded px-2 py-1 text-xs font-bold text-blue-600"></td>
           <td class="py-3.5 px-4 min-w-[220px]"><input type="text" value="${item.note || ''}" onchange="updateFirebaseField('${key}', 'note', this.value)" class="w-full bg-slate-50 border rounded px-2.5 py-1.5 text-xs"></td>
           <td class="py-3.5 px-4 text-center min-w-[130px]">
             <select onchange="updateDashboardStatus('${key}', this.value)" class="border rounded px-2.5 py-1.5 text-xs font-bold">
@@ -408,7 +407,6 @@
       lucide.createIcons();
     }
 
-    // 대시보드 전용 사진 업로드 및 실시간 공유 함수
     async function handleDashboardPhotoUpload(event, btnIndex, key, identifier) {
       const inputEl = event.target;
       const files = Array.from(inputEl.files);
@@ -849,8 +847,8 @@
           <td class="py-3 px-3 border-r"><input type="text" value="${row[8] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs" onchange="updateExportSheetField(this, 9)"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[11] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs" onchange="updateExportSheetField(this, 12)"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${shoringVal}" class="shoring-input w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 13); updateRowCondition(this);"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[13] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs" onchange="updateExportSheetField(this, 14)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[14] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 15)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[13] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 14)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[14] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 15)"></td>
           <td class="py-3 px-3 border-r min-w-[140px]"><input type="text" value="${row[15] || ''}" class="w-full text-center bg-slate-50 border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 16)"></td>
           <td class="py-3 px-3 border-r min-w-[150px]">
             <select class="export-status-select w-full border bg-white text-slate-700 font-bold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer" onchange="updateExportStatusOrWorker(this, 33, 'status', ${idx}); updateRowCondition(this);">
