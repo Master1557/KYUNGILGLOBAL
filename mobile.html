@@ -25,12 +25,18 @@
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800 pb-16">
 
+  <!-- 알림 권한 요청 및 안내 배너 (최초 접속 시 표시) -->
+  <div id="notification-permission-banner" class="bg-blue-600 text-white px-4 py-2.5 text-xs font-bold text-center flex justify-between items-center shadow-inner hidden">
+    <span>🔔 현장 알림 및 진동을 받으려면 알림 권한을 허용해주세요!</span>
+    <button onclick="requestNotificationPermission()" class="bg-white text-blue-600 px-3 py-1 rounded-lg text-[11px] font-black cursor-pointer shadow">알림 허용하기</button>
+  </div>
+
   <!-- 실시간 신규 접수 알림 팝업 배너 -->
-  <div id="new-order-alert" class="fixed top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-5 py-3 rounded-2xl shadow-2xl z-50 hidden flex items-center gap-3 border border-blue-400">
-    <i data-lucide="bell" class="w-5 h-5 animate-bounce"></i>
+  <div id="new-order-alert" class="fixed top-12 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-2xl z-50 hidden flex items-center gap-3 border border-blue-500/50">
+    <i data-lucide="bell" class="w-6 h-6 text-amber-400 animate-bounce"></i>
     <div>
-      <p class="text-xs font-black">새로운 기사님 접수!</p>
-      <p id="new-order-text" class="text-[11px] font-medium opacity-90">확인해보세요.</p>
+      <p class="text-xs font-black text-amber-400">새로운 기사님 접수!</p>
+      <p id="new-order-text" class="text-xs font-medium text-slate-200 mt-0.5">확인해보세요.</p>
     </div>
   </div>
 
@@ -159,11 +165,25 @@
     let exportStatusMap = {};
     let lastSheetRows = [];
     let lastRawDataString = "";
-    let isInitialDashboardLoad = true; // 최초 접속 시 무더기 알림 방지용
+    let isInitialDashboardLoad = true;
 
     lucide.createIcons();
 
-    // 신규 접수 감지 및 알림 트리거
+    // 알림 권한 체크 및 요청 함수
+    function requestNotificationPermission() {
+      if ('Notification' in window) {
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') {
+            document.getElementById('notification-permission-banner').classList.add('hidden');
+            alert("알림 권한이 허용되었습니다!");
+          } else {
+            alert("알림 권한이 거부되었습니다. 브라우저 설정에서 허용해주세요.");
+          }
+        });
+      }
+    }
+
+    // 신규 접수 감지 및 진동 + 푸시 알림 트리거
     dashboardRef.on('value', (snapshot) => {
       const newData = snapshot.val() || {};
       
@@ -171,12 +191,25 @@
         const oldKeys = Object.keys(dashboardMap);
         const newKeys = Object.keys(newData);
         
-        // 새로운 키(접수 건)가 추가되었을 때 알림 발동
         if (newKeys.length > oldKeys.length) {
           const latestKey = newKeys[newKeys.length - 1];
           const latestItem = newData[latestKey];
           if (latestItem) {
-            showNewOrderAlert(`[${latestItem.workType || '접수'}] 화주명: ${latestItem.clientName || '미정'} (${latestItem.carNumber || ''})`);
+            const msg = `[${latestItem.workType || '접수'}] 화주명: ${latestItem.clientName || '미정'} (${latestItem.carNumber || ''})`;
+            showNewOrderAlert(msg);
+
+            // 1. 휴대폰 진동 울리기 (지원되는 모바일 브라우저)
+            if ('vibrate' in navigator) {
+              navigator.vibrate([300, 150, 300, 150, 300]);
+            }
+
+            // 2. 스마트폰 상단 푸시 알림 띄우기
+            if ('Notification' in window && Notification.permission === 'granted') {
+              new Notification("경일글로벌 새 기사님 접수!", {
+                body: msg,
+                icon: "logo.png"
+              });
+            }
           }
         }
       }
@@ -203,10 +236,9 @@
       textEl.innerText = textMsg;
       alertBox.classList.remove('hidden');
 
-      // 4초 뒤 알림 자동 숨김
       setTimeout(() => {
         alertBox.classList.add('hidden');
-      }, 4000);
+      }, 5000);
     }
 
     function switchMobileTab(tabName) {
@@ -609,8 +641,13 @@
     }, 4000);
 
     window.addEventListener('DOMContentLoaded', () => {
-      const lastTab = localStorage.-getItem('currentMobileTab') || 'dashboard';
+      const lastTab = localStorage.getItem('currentMobileTab') || 'dashboard';
       switchMobileTab(lastTab);
+
+      // 브라우저 알림 권한 상태 확인 후 배너 표시 여부 결정
+      if ('Notification' in window && Notification.permission === 'default') {
+        document.getElementById('notification-permission-banner').classList.remove('hidden');
+      }
 
       const savedUrl = localStorage.getItem('sheetWebAppUrl');
       if (savedUrl) {
