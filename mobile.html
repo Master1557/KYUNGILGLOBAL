@@ -175,9 +175,6 @@
         Notification.requestPermission().then(permission => {
           if (permission === 'granted') {
             document.getElementById('notification-permission-banner').classList.add('hidden');
-            alert("알림 권한이 허용되었습니다!");
-          } else {
-            alert("알림 권한이 거부되었습니다. 브라우저 설정에서 허용해주세요.");
           }
         });
       }
@@ -241,7 +238,7 @@
     function closeSettingsModal() { document.getElementById('settingsModal').classList.add('hidden'); }
     function saveSettings() {
       const url = document.getElementById('sheet-url-input').value.trim();
-      if (!url) { alert("URL을 입력하세요."); return; }
+      if (!url) return;
       localStorage.setItem('sheetWebAppUrl', url);
       closeSettingsModal();
       fetchSheetData(url);
@@ -356,9 +353,7 @@
       if (files.length === 0) return;
 
       const webAppUrl = document.getElementById('sheet-url-input').value.trim();
-      if (!webAppUrl) { alert("환경설정에서 웹 앱 URL을 먼저 입력해주세요."); inputEl.value = ''; return; }
-
-      alert(`${files.length}장의 사진을 압축 및 업로드합니다!`);
+      if (!webAppUrl) { inputEl.value = ''; return; }
 
       try {
         const uploadPromises = files.map(async (file, i) => {
@@ -385,9 +380,8 @@
         let combinedUrls = existingUrls.concat(newUploadedUrls);
 
         await exportPhotosRef.child(dbKey).set({ urls: combinedUrls, identifier: identifier });
-        alert("사진 업로드 완료!");
       } catch (error) {
-        alert("업로드 실패: " + error.message);
+        console.error("업로드 실패: ", error);
       }
       inputEl.value = '';
     }
