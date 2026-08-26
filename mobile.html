@@ -345,7 +345,7 @@
       });
     }
 
-    // ★ 업로드 중 노란색 로딩 박스 표시 함수
+    // ★ 모바일 대시보드 및 수출현황판 공용 업로드 중 로딩 박스 표시 함수
     async function handleMobilePhotoUpload(event, btnIndex, rowKeyOrIdx, identifier, isDashboard = false) {
       const inputEl = event.target;
       const files = Array.from(inputEl.files);
@@ -354,7 +354,6 @@
       const webAppUrl = document.getElementById('sheet-url-input').value.trim();
       if (!webAppUrl) { inputEl.value = ''; return; }
 
-      // 업로드 버튼 주변의 컨테이너를 찾아 로딩 박스 추가
       const card = inputEl.closest('.bg-white');
       let loadingBox = null;
       if (card) {
