@@ -345,7 +345,7 @@
       });
     }
 
-    // ★ 알림창(alert) 없이 백그라운드에서 조용히 업로드 수행
+    // ★ 업로드 중 노란색 로딩 박스 표시 함수
     async function handleMobilePhotoUpload(event, btnIndex, rowKeyOrIdx, identifier, isDashboard = false) {
       const inputEl = event.target;
       const files = Array.from(inputEl.files);
@@ -353,6 +353,16 @@
 
       const webAppUrl = document.getElementById('sheet-url-input').value.trim();
       if (!webAppUrl) { inputEl.value = ''; return; }
+
+      // 업로드 버튼 주변의 컨테이너를 찾아 로딩 박스 추가
+      const card = inputEl.closest('.bg-white');
+      let loadingBox = null;
+      if (card) {
+        loadingBox = document.createElement('div');
+        loadingBox.className = "flex items-center gap-1.5 font-bold text-amber-800 bg-amber-100 px-3 py-2 rounded-xl border border-amber-300 text-xs mt-2";
+        loadingBox.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span> [사진 ${btnIndex}] ${files.length}장 업로드 중...`;
+        card.appendChild(loadingBox);
+      }
 
       try {
         const uploadPromises = files.map(async (file, i) => {
@@ -372,6 +382,8 @@
         });
 
         const newUploadedUrls = await Promise.all(uploadPromises);
+        if (loadingBox) loadingBox.remove();
+
         const prefix = isDashboard ? 'dash' : 'row';
         const dbKey = `${prefix}_${rowKeyOrIdx}_photo_${btnIndex}`;
         
@@ -380,6 +392,7 @@
 
         await exportPhotosRef.child(dbKey).set({ urls: combinedUrls, identifier: identifier });
       } catch (error) {
+        if (loadingBox) loadingBox.remove();
         console.error("업로드 실패: ", error);
       }
       inputEl.value = '';
