@@ -169,7 +169,6 @@
 
     lucide.createIcons();
 
-    // 알림 권한 체크 및 요청 함수
     function requestNotificationPermission() {
       if ('Notification' in window) {
         Notification.requestPermission().then(permission => {
@@ -180,7 +179,6 @@
       }
     }
 
-    // Firebase 실시간 리스너 설정
     dashboardRef.on('value', (snapshot) => {
       const newData = snapshot.val() || {};
       if (!isInitialDashboardLoad) {
@@ -347,6 +345,7 @@
       });
     }
 
+    // ★ 알림창(alert) 없이 백그라운드에서 조용히 업로드 수행
     async function handleMobilePhotoUpload(event, btnIndex, rowKeyOrIdx, identifier, isDashboard = false) {
       const inputEl = event.target;
       const files = Array.from(inputEl.files);
