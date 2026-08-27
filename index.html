@@ -786,7 +786,7 @@
         lastSheetRows = data || [];
         
         if (lastSheetRows.length > 0) {
-          const currentFirstCntr = (lastSheetRows[0][2] || '').toString().trim();
+          const currentFirstCntr = (lastSheetRows[0][3] || '').toString().trim();
           const savedFirstCntr = localStorage.getItem('lastCheckedFirstCntr') || "";
           const todayDateStr = new Date().toDateString();
           const savedDateStr = localStorage.getItem('lastCheckedDate') || "";
@@ -875,7 +875,7 @@
       }
     }
 
-    // ★ 입고 구간 파싱 (수입작업 (입고) ~ 수입작업 (출고) 사이)
+    // ★ 입고 구간 파싱 (실제 시트 열 순서에 맞춰 B~P열 데이터 정확히 추출)
     function getInboundRows(rows) {
       let inboundList = [];
       let capture = false;
@@ -889,9 +889,11 @@
           capture = false;
         }
         if (capture) {
-          let noVal = (rows[i][0] || '').toString().trim();
-          let cntrVal = (rows[i][2] || '').toString().trim();
-          if (noVal !== "" && !isNaN(noVal)) {
+          // B열(인덱스 1) 또는 C열(인덱스 2)에 번호나 규격 데이터가 있는 행만 캐치
+          let colB = (rows[i][1] || '').toString().trim();
+          let colC = (rows[i][2] || '').toString().trim();
+          let colD = (rows[i][3] || '').toString().trim();
+          if (colB !== "" || colC !== "" || colD !== "") {
             inboundList.push({ originalIndex: i, data: rows[i] });
           }
         }
@@ -899,7 +901,7 @@
       return inboundList;
     }
 
-    // ★ 수출 구간 파싱 (수입작업 (출고) 이후)
+    // ★ 수출 구간 파싱
     function getExportRows(rows) {
       let exportList = [];
       let capture = false;
@@ -910,16 +912,18 @@
           continue;
         }
         if (capture) {
-          let noVal = (rows[i][0] || '').toString().trim();
-          if (noVal !== "" && !isNaN(noVal)) {
+          let colB = (rows[i][1] || '').toString().trim();
+          let colC = (rows[i][2] || '').toString().trim();
+          let colD = (rows[i][3] || '').toString().trim();
+          if (colB !== "" || colC !== "" || colD !== "") {
             exportList.push({ originalIndex: i, data: rows[i] });
           }
         }
       }
       if (exportList.length === 0) {
         for (let i = 0; i < rows.length; i++) {
-          let noVal = (rows[i][0] || '').toString().trim();
-          if (noVal !== "" && !isNaN(noVal)) {
+          let colB = (rows[i][1] || '').toString().trim();
+          if (colB !== "" && !isNaN(colB)) {
             exportList.push({ originalIndex: i, data: rows[i] });
           }
         }
@@ -927,7 +931,7 @@
       return exportList;
     }
 
-    // ★ 입고시트 렌더링 (입고 스프레드시트 열 순서에 맞춤)
+    // ★ 입고시트 렌더링 (구글시트 실제 열 인덱스 [1] ~ [15] 에 완벽 매칭)
     function renderInboundTable(rows) {
       const tbody = document.getElementById('inbound-table-body');
       if (!tbody) return;
@@ -953,7 +957,7 @@
         
         const workerList = ["조인효", "윤동현", "이예성", "김찬양"];
         let workerOptions = `<option value="">선택 안함</option>`;
-        const savedWorker = exportStatusMap[`row_${idx}_worker`] !== undefined ? exportStatusMap[`row_${idx}_worker`] : (row[33] || '');
+        const savedWorker = exportStatusMap[`row_${idx}_worker`] !== undefined ? exportStatusMap[`row_${idx}_worker`] : (row[16] || '');
         workerList.forEach(w => {
           const selected = savedWorker === w ? 'selected' : '';
           workerOptions += `<option value="${w}" ${selected}>${w}</option>`;
@@ -961,26 +965,26 @@
 
         const p1Data = exportPhotosMap[`row_${idx}_photo_1`];
         const p2Data = exportPhotosMap[`row_${idx}_photo_2`];
-        let identifier = (row[2] || '입고사진').toString().trim();
+        let identifier = (row[3] || '입고사진').toString().trim(); // CNTR#
 
         tr.innerHTML = `
-          <td class="py-3 px-3 text-center bg-blue-100/60 border-r font-bold text-sm">${row[0] || (displayIdx + 1)}</td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[1] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs" onchange="updateExportSheetField(this, 2)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[2] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 3)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[3] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 4)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[4] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 5)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[5] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 6)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[6] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 7)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[7] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 8)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[8] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 9)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[9] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 10)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[10] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 11)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[11] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 12)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[12] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs" onchange="updateExportSheetField(this, 13)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[13] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 14)"></td>
-          <td class="py-3 px-3 border-r min-w-[140px]"><input type="text" value="${row[14] || ''}" class="w-full text-center bg-slate-50 border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 15)"></td>
+          <td class="py-3 px-3 text-center bg-blue-100/60 border-r font-bold text-sm">${row[1] || (displayIdx + 1)}</td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[2] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs" onchange="updateExportSheetField(this, 2)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[3] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 3)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[4] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 4)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[5] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 5)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[6] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 6)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[7] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 7)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[8] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 8)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[9] || ''}" class="w-full text-center border rounded px-2.5 py-1 text-xs" onchange="updateExportSheetField(this, 9)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[10] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 10)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[11] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 11)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[12] || ''}" class="w-full text-center border rounded px-2.5 py-1 text-xs" onchange="updateExportSheetField(this, 12)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[13] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs" onchange="updateExportSheetField(this, 13)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[14] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 14)"></td>
+          <td class="py-3 px-3 border-r min-w-[140px]"><input type="text" value="${row[15] || ''}" class="w-full text-center bg-slate-50 border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 15)"></td>
           <td class="py-3 px-3 border-r min-w-[150px]">
-            <select class="export-status-select w-full border bg-white text-slate-700 font-bold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer" onchange="updateExportStatusOrWorker(this, 33, 'status', ${idx})">
+            <select class="export-status-select w-full border bg-white text-slate-700 font-bold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer" onchange="updateExportStatusOrWorker(this, 16, 'status', ${idx})">
               <option value="NONE" selected>선택 안함</option>
               <option value="TALLY">TALLY완료</option>
               <option value="VANNING">작업중</option>
@@ -988,7 +992,7 @@
             </select>
           </td>
           <td class="py-3 px-3 border-r min-w-[140px]">
-            <select class="export-worker-select w-full border bg-white text-slate-700 font-bold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer" onchange="updateExportStatusOrWorker(this, 34, 'worker', ${idx})">
+            <select class="export-worker-select w-full border bg-white text-slate-700 font-bold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer" onchange="updateExportStatusOrWorker(this, 17, 'worker', ${idx})">
               ${workerOptions}
             </select>
           </td>
@@ -1025,7 +1029,7 @@
 
         const addedTr = tbody.lastChild;
         const selectEl = addedTr.querySelector('.export-status-select');
-        const savedStatus = exportStatusMap[`row_${idx}_status`] !== undefined ? exportStatusMap[`row_${idx}_status`] : (row[32] || 'NONE');
+        const savedStatus = exportStatusMap[`row_${idx}_status`] !== undefined ? exportStatusMap[`row_${idx}_status`] : (row[16] || 'NONE');
         if (selectEl) {
           selectEl.value = savedStatus;
         }
@@ -1083,14 +1087,14 @@
       exportItems.forEach((item, displayIdx) => {
         const idx = item.originalIndex;
         const row = item.data;
-        const shoringVal = (row[12] || '').toString().trim();
+        const shoringVal = (row[11] || '').toString().trim(); // CLS/쇼링 열에 맞춤
         const tr = document.createElement('tr');
         tr.className = "hover:bg-slate-50 transition";
         tr.setAttribute('data-original-index', idx);
         
         const workerList = ["조인효", "윤동현", "이예성", "김찬양"];
         let exportWorkerOptions = `<option value="">선택 안함</option>`;
-        const savedWorker = exportStatusMap[`row_${idx}_worker`] !== undefined ? exportStatusMap[`row_${idx}_worker`] : (row[33] || '');
+        const savedWorker = exportStatusMap[`row_${idx}_worker`] !== undefined ? exportStatusMap[`row_${idx}_worker`] : (row[17] || '');
         workerList.forEach(w => {
           const selected = savedWorker === w ? 'selected' : '';
           exportWorkerOptions += `<option value="${w}" ${selected}>${w}</option>`;
@@ -1098,25 +1102,25 @@
 
         const p1Data = exportPhotosMap[`row_${idx}_photo_1`];
         const p2Data = exportPhotosMap[`row_${idx}_photo_2`];
-        let identifier = (row[2] || '사진').toString().trim();
+        let identifier = (row[3] || '사진').toString().trim();
 
         tr.innerHTML = `
-          <td class="py-3 px-3 text-center bg-green-100/60 border-r font-bold text-sm">${row[0] || (displayIdx + 1)}</td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[1] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs" onchange="updateExportSheetField(this, 2)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[2] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 3)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[3] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 4)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[4] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 5)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[5] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 6)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[6] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 7)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[7] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 8)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[8] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 9)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[11] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 12)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${shoringVal}" class="shoring-input w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 13); updateRowCondition(this);"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[13] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 14)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[14] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 15)"></td>
-          <td class="py-3 px-3 border-r min-w-[140px]"><input type="text" value="${row[15] || ''}" class="w-full text-center bg-slate-50 border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 16)"></td>
+          <td class="py-3 px-3 text-center bg-green-100/60 border-r font-bold text-sm">${row[1] || (displayIdx + 1)}</td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[2] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs" onchange="updateExportSheetField(this, 2)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[3] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 3)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[4] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 4)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[5] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 5)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[6] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 6)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[7] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 7)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[8] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 8)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[9] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 9)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[10] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 10)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${shoringVal}" class="shoring-input w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 11); updateRowCondition(this);"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[12] || ''}" class="w-full text-center border rounded px-2.5 py-1 text-xs" onchange="updateExportSheetField(this, 12)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[13] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 13)"></td>
+          <td class="py-3 px-3 border-r min-w-[140px]"><input type="text" value="${row[14] || ''}" class="w-full text-center bg-slate-50 border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 14)"></td>
           <td class="py-3 px-3 border-r min-w-[150px]">
-            <select class="export-status-select w-full border bg-white text-slate-700 font-bold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer" onchange="updateExportStatusOrWorker(this, 33, 'status', ${idx}); updateRowCondition(this);">
+            <select class="export-status-select w-full border bg-white text-slate-700 font-bold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer" onchange="updateExportStatusOrWorker(this, 16, 'status', ${idx}); updateRowCondition(this);">
               <option value="NONE" selected>선택 안함</option>
               <option value="TALLY">TALLY완료</option>
               <option value="VANNING">적입중</option>
@@ -1124,7 +1128,7 @@
             </select>
           </td>
           <td class="py-3 px-3 border-r min-w-[140px]">
-            <select class="export-worker-select w-full border bg-white text-slate-700 font-bold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer" onchange="updateExportStatusOrWorker(this, 34, 'worker', ${idx})">
+            <select class="export-worker-select w-full border bg-white text-slate-700 font-bold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer" onchange="updateExportStatusOrWorker(this, 17, 'worker', ${idx})">
               ${exportWorkerOptions}
             </select>
           </td>
@@ -1166,7 +1170,7 @@
         
         const addedTr = tbody.lastChild;
         const selectEl = addedTr.querySelector('.export-status-select');
-        const savedStatus = exportStatusMap[`row_${idx}_status`] !== undefined ? exportStatusMap[`row_${idx}_status`] : (row[32] || 'NONE');
+        const savedStatus = exportStatusMap[`row_${idx}_status`] !== undefined ? exportStatusMap[`row_${idx}_status`] : (row[16] || 'NONE');
         if (selectEl) {
           selectEl.value = savedStatus;
           updateRowCondition(selectEl);
@@ -1236,7 +1240,7 @@
             lastSheetRows = data || [];
             
             if (lastSheetRows.length > 0) {
-              const currentFirstCntr = (lastSheetRows[0][2] || '').toString().trim();
+              const currentFirstCntr = (lastSheetRows[0][3] || '').toString().trim();
               const savedFirstCntr = localStorage.getItem('lastCheckedFirstCntr') || "";
               const todayDateStr = new Date().toDateString();
               const savedDateStr = localStorage.getItem('lastCheckedDate') || "";
