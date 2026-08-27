@@ -59,15 +59,19 @@
   </header>
 
   <!-- Mobile Tab Navigation -->
-  <nav class="bg-white border-b border-slate-200 px-4 py-2 flex gap-2 sticky top-[57px] z-30 shadow-sm">
-    <button id="nav-dashboard-tab" onclick="switchMobileTab('dashboard')" class="flex-1 py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition bg-blue-600 text-white shadow-sm">
-      <i data-lucide="clipboard-list" class="w-4 h-4"></i>
-      <span>오퍼레이터 대시보드</span>
+  <nav class="bg-white border-b border-slate-200 px-3 py-2 flex gap-1.5 sticky top-[57px] z-30 shadow-sm overflow-x-auto">
+    <button id="nav-dashboard-tab" onclick="switchMobileTab('dashboard')" class="flex-1 min-w-[100px] py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1 transition bg-blue-600 text-white shadow-sm">
+      <i data-lucide="clipboard-list" class="w-3.5 h-3.5"></i>
+      <span>대시보드</span>
       <span id="mobile-nav-badge" class="bg-red-500 text-white text-[10px] px-1.5 py-0.2 rounded-full font-black">0</span>
     </button>
-    <button id="nav-export-tab" onclick="switchMobileTab('export')" class="flex-1 py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition bg-slate-100 text-slate-600 hover:bg-slate-200">
-      <i data-lucide="ship" class="w-4 h-4"></i>
-      <span>수출 현황판</span>
+    <button id="nav-import-tab" onclick="switchMobileTab('import')" class="flex-1 min-w-[100px] py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1 transition bg-slate-100 text-slate-600 hover:bg-slate-200">
+      <i data-lucide="arrow-down-left" class="w-3.5 h-3.5"></i>
+      <span>수입 현황</span>
+    </button>
+    <button id="nav-export-tab" onclick="switchMobileTab('export')" class="flex-1 min-w-[100px] py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1 transition bg-slate-100 text-slate-600 hover:bg-slate-200">
+      <i data-lucide="ship" class="w-3.5 h-3.5"></i>
+      <span>수출 현황</span>
     </button>
   </nav>
 
@@ -81,7 +85,6 @@
       <span class="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-xl">대기중: <span id="mobile-count-waiting">0</span>건</span>
     </div>
 
-    <!-- 대시보드 검색창 추가 -->
     <div class="bg-white p-2.5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-2">
       <i data-lucide="search" class="w-4 h-4 text-slate-400 ml-1"></i>
       <input type="text" id="dashboard-search-input" oninput="renderMobileDashboard(dashboardMap)" placeholder="차량번호, 화주명, 연락처, 비고 검색..." class="w-full text-xs outline-none bg-transparent font-semibold text-slate-700">
@@ -94,7 +97,31 @@
     </div>
   </main>
 
-  <!-- TAB 2: Export Status Board (수출 현황판) -->
+  <!-- TAB 2: Import Status Board (모바일 수입 현황판) -->
+  <main id="mobile-tab-import" class="max-w-md mx-auto px-3 py-4 space-y-3 hidden">
+    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center">
+      <div>
+        <p class="text-[11px] font-bold text-slate-400">구글 시트 연동</p>
+        <h2 class="text-sm font-black text-slate-900">수입 작업(입고) 카드 목록</h2>
+      </div>
+      <button onclick="fetchSheetData(localStorage.getItem('sheetWebAppUrl'))" class="bg-slate-800 text-white px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1 shadow cursor-pointer">
+        <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i> 새로고침
+      </button>
+    </div>
+
+    <div class="bg-white p-2.5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-2">
+      <i data-lucide="search" class="w-4 h-4 text-slate-400 ml-1"></i>
+      <input type="text" id="import-search-input" oninput="renderMobileImportCards(lastImportRows)" placeholder="CNTR#, 화주, 규격, 비고 검색..." class="w-full text-xs outline-none bg-transparent font-semibold text-slate-700">
+    </div>
+
+    <div id="mobile-import-container" class="space-y-3">
+      <div class="text-center py-12 text-slate-400 font-semibold bg-white rounded-2xl p-6 border border-slate-200">
+        데이터를 불러오는 중입니다...
+      </div>
+    </div>
+  </main>
+
+  <!-- TAB 3: Export Status Board (수출 현황판) -->
   <main id="mobile-tab-export" class="max-w-md mx-auto px-3 py-4 space-y-3 hidden">
     <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center">
       <div>
@@ -106,7 +133,6 @@
       </button>
     </div>
 
-    <!-- 수출 현황판 검색창 추가 -->
     <div class="bg-white p-2.5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-2">
       <i data-lucide="search" class="w-4 h-4 text-slate-400 ml-1"></i>
       <input type="text" id="export-search-input" oninput="renderMobileExportCards(lastSheetRows)" placeholder="CNTR#, 화주, 규격, SEAL, 쇼링 검색..." class="w-full text-xs outline-none bg-transparent font-semibold text-slate-700">
@@ -175,6 +201,7 @@
     let dashboardMap = {};
     let exportPhotosMap = {};
     let exportStatusMap = {};
+    let lastImportRows = [];
     let lastSheetRows = [];
     let lastRawDataString = "";
     let isInitialDashboardLoad = true;
@@ -217,11 +244,13 @@
     exportPhotosRef.on('value', (snapshot) => {
       exportPhotosMap = snapshot.val() || {};
       renderMobileDashboard(dashboardMap);
+      if (lastImportRows.length > 0) renderMobileImportCards(lastImportRows);
       if (lastSheetRows.length > 0) renderMobileExportCards(lastSheetRows);
     });
 
     exportStatusRef.on('value', (snapshot) => {
       exportStatusMap = snapshot.val() || {};
+      if (lastImportRows.length > 0) renderMobileImportCards(lastImportRows);
       if (lastSheetRows.length > 0) renderMobileExportCards(lastSheetRows);
     });
 
@@ -235,11 +264,12 @@
 
     function switchMobileTab(tabName) {
       localStorage.setItem('currentMobileTab', tabName);
-      ['dashboard', 'export'].forEach(t => {
-        document.getElementById(`mobile-tab-${t}`).className = (t === tabName) ? "max-w-md mx-auto px-3 py-4 space-y-3 block" : "hidden";
+      ['dashboard', 'import', 'export'].forEach(t => {
+        const el = document.getElementById(`mobile-tab-${t}`);
+        if (el) el.className = (t === tabName) ? "max-w-md mx-auto px-3 py-4 space-y-3 block" : "hidden";
         const btn = document.getElementById(`nav-${t}-tab`);
         if (btn) {
-          btn.className = (t === tabName) ? "flex-1 py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition bg-blue-600 text-white shadow-sm" : "flex-1 py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition bg-slate-100 text-slate-600 hover:bg-slate-200";
+          btn.className = (t === tabName) ? "flex-1 min-w-[100px] py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1 transition bg-blue-600 text-white shadow-sm" : "flex-1 min-w-[100px] py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1 transition bg-slate-100 text-slate-600 hover:bg-slate-200";
         }
       });
     }
@@ -265,10 +295,13 @@
       if (oldScript) oldScript.remove();
 
       window.onSheetDataReceived = function(data) {
-        lastSheetRows = data || [];
-        const newDataString = JSON.stringify(lastSheetRows);
+        lastImportRows = data.importRows || [];
+        lastSheetRows = data.exportRows || [];
+
+        const newDataString = JSON.stringify(data);
         if (newDataString !== lastRawDataString) {
           lastRawDataString = newDataString;
+          renderMobileImportCards(lastImportRows);
           renderMobileExportCards(lastSheetRows);
         }
         if (badge) {
@@ -289,14 +322,15 @@
       renderMobileDashboard(dashboardMap);
     }
 
-    async function updateExportStatusOrWorker(element, colIndex, fieldName, rowIndex) {
+    async function updateExportStatusOrWorker(element, colIndex, fieldName, rowIndex, prefix = 'row') {
       const webAppUrl = document.getElementById('sheet-url-input').value.trim();
       const value = element.value;
-      exportStatusRef.child(`row_${rowIndex}_${fieldName}`).set(value);
+      exportStatusRef.child(`${prefix}_${rowIndex}_${fieldName}`).set(value);
       if (webAppUrl) {
         try {
           const formData = new URLSearchParams();
           formData.append('action', 'updateCell');
+          formData.append('sheetType', prefix);
           formData.append('row', rowIndex);
           formData.append('col', colIndex);
           formData.append('value', value);
@@ -314,12 +348,24 @@
       return text;
     }
 
+    function formatDateString(val) {
+      if (!val) return '';
+      const str = String(val).trim();
+      if (str.includes('T') && (str.includes('Z') || str.includes('+'))) {
+        const d = new Date(str);
+        if (!isNaN(d.getTime())) {
+          return `${d.getMonth() + 1}/${d.getDate()}`;
+        }
+      }
+      return str;
+    }
+
     const shoringPhoneMap = {
       "SH": "010-8377-8779",
       "로케트": "051-442-0058", "로켓트": "051-442-0058",
       "하람": "010-9419-2245", "더옥": "051-971-6949",
       "우영": "051-643-2333", "신성": "051-634-4353", "신성TLS": "051-634-4353",
-      "동해": "051-464-8588", "카с": "051-463-9525", "하나": "051-753-3618",
+      "동해": "051-464-8588", "카스": "051-463-9525", "하나": "051-753-3618",
       "대명": "051-637-4667", "SL": "010-8014-4276",
       "씨어코리아": "010-2515-4542", "씨어": "010-2515-4542", "세아": "010-2515-4542",
       "제이원": "010-9649-9399"
@@ -360,7 +406,7 @@
       });
     }
 
-    async function handleMobilePhotoUpload(event, btnIndex, rowKeyOrIdx, identifier, isDashboard = false) {
+    async function handleMobilePhotoUpload(event, btnIndex, rowKeyOrIdx, identifier, prefix = 'row') {
       const inputEl = event.target;
       const files = Array.from(inputEl.files);
       if (files.length === 0) return;
@@ -379,7 +425,7 @@
 
       try {
         const uploadPromises = files.map(async (file, i) => {
-          const fileName = `Export_${identifier}_${Date.now()}_${i + 1}_${file.name}`;
+          const fileName = `${prefix}_${identifier}_${Date.now()}_${i + 1}_${file.name}`;
           const base64Data = await resizeImage(file, 900, 0.6);
 
           const formData = new URLSearchParams();
@@ -397,9 +443,7 @@
         const newUploadedUrls = await Promise.all(uploadPromises);
         if (loadingBox) loadingBox.remove();
 
-        const prefix = isDashboard ? 'dash' : 'row';
         const dbKey = `${prefix}_${rowKeyOrIdx}_photo_${btnIndex}`;
-        
         let existingUrls = (exportPhotosMap[dbKey] && exportPhotosMap[dbKey].urls) ? exportPhotosMap[dbKey].urls : [];
         let combinedUrls = existingUrls.concat(newUploadedUrls);
 
@@ -425,7 +469,6 @@
       const searchInput = document.getElementById('dashboard-search-input');
       const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
 
-      // 검색 필터 적용
       const filteredKeys = keys.filter(key => {
         if (!keyword) return true;
         const item = data[key];
@@ -502,10 +545,10 @@
 
           <div class="pt-2 border-t border-slate-100 flex gap-2">
             <label class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-xl text-xs text-center cursor-pointer shadow-sm">
-              📷 사진 1 업로드 <input type="file" accept="image/*" multiple class="hidden" onchange="handleMobilePhotoUpload(event, 1, '${key}', '${item.carNumber}', true)">
+              📷 사진 1 업로드 <input type="file" accept="image/*" multiple class="hidden" onchange="handleMobilePhotoUpload(event, 1, '${key}', '${item.carNumber}', 'dash')">
             </label>
             <label class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 rounded-xl text-xs text-center cursor-pointer shadow-sm">
-              📷 사진 2 업로드 <input type="file" accept="image/*" multiple class="hidden" onchange="handleMobilePhotoUpload(event, 2, '${key}', '${item.carNumber}', true)">
+              📷 사진 2 업로드 <input type="file" accept="image/*" multiple class="hidden" onchange="handleMobilePhotoUpload(event, 2, '${key}', '${item.carNumber}', 'dash')">
             </label>
           </div>
           <div class="flex gap-2">
@@ -513,6 +556,120 @@
             ${p2Data && p2Data.urls && p2Data.urls.length > 0 ? `<button onclick='showPhotoModal(${JSON.stringify(p2Data.urls)}, "${item.carNumber} - 사진 2")' class="flex-1 bg-emerald-50 text-emerald-700 border border-emerald-300 font-bold py-1.5 rounded-xl text-xs cursor-pointer">사진 2 보기 (${p2Data.urls.length}장)</button>` : ''}
           </div>
         `;
+        container.appendChild(card);
+      });
+      lucide.createIcons();
+    }
+
+    // 모바일 수입 현황판 렌더링 (병합 행 및 세부 정보 완벽 반영)
+    function renderMobileImportCards(rows) {
+      const container = document.getElementById('mobile-import-container');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const searchInput = document.getElementById('import-search-input');
+      const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+      const filteredRows = rows.map((row, idx) => ({ row, idx })).filter(({ row }) => {
+        if (!keyword) return true;
+        const searchTarget = `${row[1] || ''} ${row[2] || ''} ${row[3] || ''} ${row[4] || ''} ${row[12] || ''}`.toLowerCase();
+        return searchTarget.includes(keyword);
+      });
+
+      if (filteredRows.length === 0) {
+        container.innerHTML = `<div class="text-center py-12 text-slate-400 font-semibold bg-white rounded-2xl p-6 border border-slate-200">검색 결과가 없습니다.</div>`;
+        return;
+      }
+
+      filteredRows.forEach(({ row, idx }) => {
+        const no = row[0] || (idx + 1);
+        const spec = (row[1] || '').toString().trim();
+        const cntr = (row[2] || '').toString().trim();
+        const shipper = (row[4] || '').toString().trim();
+        const note = (row[12] || '').toString().trim();
+        const detention = formatDateString(row[11]);
+
+        const workerList = ["조인효", "윤동현", "이예성", "김찬양"];
+        const savedWorker = exportStatusMap[`import_${idx}_worker`] !== undefined ? exportStatusMap[`import_${idx}_worker`] : '';
+        const savedStatus = exportStatusMap[`import_${idx}_status`] !== undefined ? exportStatusMap[`import_${idx}_status`] : 'NONE';
+
+        let workerOptions = `<option value="">작업자 선택</option>`;
+        workerList.forEach(w => {
+          workerOptions += `<option value="${w}" ${savedWorker === w ? 'selected' : ''}>${w}</option>`;
+        });
+
+        const p1Data = exportPhotosMap[`import_${idx}_photo_1`];
+        const p2Data = exportPhotosMap[`import_${idx}_photo_2`];
+
+        // 병합 특수 행 감지 (세방전지 입고 등)
+        const isMergedSpecialRow = (!cntr && !spec && (shipper || note));
+
+        const card = document.createElement('div');
+        card.className = "bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3";
+
+        if (isMergedSpecialRow) {
+          const mergedText = shipper || note;
+          card.innerHTML = `
+            <div class="flex justify-between items-center border-b border-slate-100 pb-2.5">
+              <span class="bg-blue-600 text-white font-black text-xs px-2.5 py-1 rounded-lg">No. ${no}</span>
+              <span class="text-xs font-black text-blue-900 bg-blue-50 px-3 py-1 rounded-xl">${mergedText}</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 pt-1">
+              <select onchange="updateExportStatusOrWorker(this, 33, 'status', ${idx}, 'import')" class="w-full border border-slate-200 bg-white font-bold rounded-lg px-3 py-2 text-xs outline-none">
+                <option value="NONE" ${savedStatus === 'NONE' ? 'selected' : ''}>상태: 선택 안함</option>
+                <option value="TALLY" ${savedStatus === 'TALLY' ? 'selected' : ''}>검수완료</option>
+                <option value="UNLOADING" ${savedStatus === 'UNLOADING' ? 'selected' : ''}>하차작업중</option>
+                <option value="DONE" ${savedStatus === 'DONE' ? 'selected' : ''}>작업완료</option>
+              </select>
+              <select onchange="updateExportStatusOrWorker(this, 34, 'worker', ${idx}, 'import')" class="w-full border border-slate-200 bg-white font-bold rounded-lg px-3 py-2 text-xs outline-none">
+                ${workerOptions}
+              </select>
+            </div>
+          `;
+        } else {
+          card.innerHTML = `
+            <div class="flex justify-between items-center border-b border-slate-100 pb-2.5">
+              <div class="flex items-center gap-2">
+                <span class="bg-blue-500 text-white font-black text-xs px-2.5 py-1 rounded-lg">No. ${no}</span>
+                <span class="font-black text-slate-900 text-sm">${cntr || 'CNTR 없음'}</span>
+              </div>
+              <span class="text-xs font-bold text-slate-500">${spec} / ${row[7] || '0'}박스</span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              <div class="bg-slate-50 p-2 rounded-xl border border-slate-100"><span class="text-slate-400 block text-[10px]">화주명</span><span class="font-bold text-slate-800">${shipper || '-'}</span></div>
+              <div class="bg-slate-50 p-2 rounded-xl border border-slate-100"><span class="text-slate-400 block text-[10px]">SEAL NO.</span><span class="font-bold text-slate-800">${row[3] || '-'}</span></div>
+              <div class="bg-slate-50 p-2 rounded-xl border border-slate-100"><span class="text-slate-400 block text-[10px]">디텐션 / LINE</span><span class="font-bold text-slate-800">${detention || '-'} / ${row[6] || '-'}</span></div>
+              <div class="bg-slate-50 p-2 rounded-xl border border-slate-100"><span class="text-slate-400 block text-[10px]">비고</span><span class="font-bold text-slate-800 truncate block">${note || '-'}</span></div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 pt-1">
+              <select onchange="updateExportStatusOrWorker(this, 33, 'status', ${idx}, 'import')" class="w-full border border-slate-200 bg-white font-bold rounded-lg px-3 py-2 text-xs outline-none">
+                <option value="NONE" ${savedStatus === 'NONE' ? 'selected' : ''}>상태: 선택 안함</option>
+                <option value="TALLY" ${savedStatus === 'TALLY' ? 'selected' : ''}>검수완료</option>
+                <option value="UNLOADING" ${savedStatus === 'UNLOADING' ? 'selected' : ''}>하차작업중</option>
+                <option value="DONE" ${savedStatus === 'DONE' ? 'selected' : ''}>작업완료</option>
+              </select>
+              <select onchange="updateExportStatusOrWorker(this, 34, 'worker', ${idx}, 'import')" class="w-full border border-slate-200 bg-white font-bold rounded-lg px-3 py-2 text-xs outline-none">
+                ${workerOptions}
+              </select>
+            </div>
+
+            <div class="pt-2 border-t border-slate-100 flex gap-2">
+              <label class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-xl text-xs text-center cursor-pointer shadow-sm">
+                📷 사진 1 업로드 <input type="file" accept="image/*" multiple class="hidden" onchange="handleMobilePhotoUpload(event, 1, ${idx}, '${cntr || no}', 'import')">
+              </label>
+              <label class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 rounded-xl text-xs text-center cursor-pointer shadow-sm">
+                📷 사진 2 업로드 <input type="file" accept="image/*" multiple class="hidden" onchange="handleMobilePhotoUpload(event, 2, ${idx}, '${cntr || no}', 'import')">
+              </label>
+            </div>
+
+            <div class="flex gap-2">
+              ${p1Data && p1Data.urls && p1Data.urls.length > 0 ? `<button onclick='showPhotoModal(${JSON.stringify(p1Data.urls)}, "${cntr || no} - 사진 1")' class="flex-1 bg-emerald-50 text-emerald-700 border border-emerald-300 font-bold py-2 rounded-xl text-xs cursor-pointer">사진 1 보기 (${p1Data.urls.length}장)</button>` : ''}
+              ${p2Data && p2Data.urls && p2Data.urls.length > 0 ? `<button onclick='showPhotoModal(${JSON.stringify(p2Data.urls)}, "${cntr || no} - 사진 2")' class="flex-1 bg-emerald-50 text-emerald-700 border border-emerald-300 font-bold py-2 rounded-xl text-xs cursor-pointer">사진 2 보기 (${p2Data.urls.length}장)</button>` : ''}
+            </div>
+          `;
+        }
         container.appendChild(card);
       });
       lucide.createIcons();
@@ -526,7 +683,6 @@
       const searchInput = document.getElementById('export-search-input');
       const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
 
-      // 검색 필터 적용
       const filteredRows = rows.map((row, idx) => ({ row, idx })).filter(({ row }) => {
         if (!keyword) return true;
         const searchTarget = `${row[1] || ''} ${row[2] || ''} ${row[3] || ''} ${row[4] || ''} ${row[12] || ''} ${row[13] || ''} ${row[14] || ''}`.toLowerCase();
@@ -598,23 +754,23 @@
           ${shoringDisplayHtml}
 
           <div class="grid grid-cols-2 gap-2 pt-1">
-            <select onchange="updateExportStatusOrWorker(this, 33, 'status', ${idx})" class="w-full border border-slate-200 bg-white font-bold rounded-lg px-3 py-2 text-xs outline-none">
+            <select onchange="updateExportStatusOrWorker(this, 33, 'status', ${idx}, 'export')" class="w-full border border-slate-200 bg-white font-bold rounded-lg px-3 py-2 text-xs outline-none">
               <option value="NONE" ${savedStatus === 'NONE' ? 'selected' : ''}>상태: 선택 안함</option>
               <option value="TALLY" ${savedStatus === 'TALLY' ? 'selected' : ''}>TALLY완료</option>
               <option value="VANNING" ${savedStatus === 'VANNING' ? 'selected' : ''}>적입중</option>
               <option value="DONE" ${savedStatus === 'DONE' ? 'selected' : ''}>작업완료</option>
             </select>
-            <select onchange="updateExportStatusOrWorker(this, 34, 'worker', ${idx})" class="w-full border border-slate-200 bg-white font-bold rounded-lg px-3 py-2 text-xs outline-none">
+            <select onchange="updateExportStatusOrWorker(this, 34, 'worker', ${idx}, 'export')" class="w-full border border-slate-200 bg-white font-bold rounded-lg px-3 py-2 text-xs outline-none">
               ${workerOptions}
             </select>
           </div>
 
           <div class="pt-2 border-t border-slate-100 flex gap-2">
             <label class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-xl text-xs text-center cursor-pointer shadow-sm">
-              📷 사진 1 업로드 <input type="file" accept="image/*" multiple class="hidden" onchange="handleMobilePhotoUpload(event, 1, ${idx}, '${cntr}')">
+              📷 사진 1 업로드 <input type="file" accept="image/*" multiple class="hidden" onchange="handleMobilePhotoUpload(event, 1, ${idx}, '${cntr}', 'export')">
             </label>
             <label class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 rounded-xl text-xs text-center cursor-pointer shadow-sm">
-              📷 사진 2 업로드 <input type="file" accept="image/*" multiple class="hidden" onchange="handleMobilePhotoUpload(event, 2, ${idx}, '${cntr}')">
+              📷 사진 2 업로드 <input type="file" accept="image/*" multiple class="hidden" onchange="handleMobilePhotoUpload(event, 2, ${idx}, '${cntr}', 'export')">
             </label>
           </div>
 
