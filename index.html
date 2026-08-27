@@ -390,7 +390,6 @@
       }
     });
 
-    // 디텐션 날짜 형식 변환 (MM/DD 형태)
     function formatDateString(val) {
       if (!val) return '';
       const str = String(val).trim();
@@ -871,7 +870,7 @@
       }
     }
 
-    // --- 수입 현황판 렌더링 함수 (컬럼 인덱스 및 17/18번 병합 행 완벽 대응) ---
+    // --- 수입 현황판 렌더링 함수 (병합 행 전용 가로 관통 처리) ---
     function renderImportTable(rows) {
       const tbody = document.getElementById('import-table-body');
       if (!tbody) return;
@@ -898,9 +897,6 @@
           importWorkerOptions += `<option value="${w}" ${selected}>${w}</option>`;
         });
 
-        // 스프레드시트 수입 컬럼 1:1 정확한 인덱스 매핑:
-        // row[0]:NO, row[1]:규격, row[2]:CNTR#, row[3]:SEAL, row[4]:화주, row[5]:ITEM, row[6]:LINE
-        // row[7]:수량, row[8]:중량, row[9]:운송사, row[10]:반납지, row[11]:디텐션, row[12]:비고, row[13]:B/L NO, row[14]:담당자
         const noVal = (row[0] || '').toString().trim();
         const specVal = (row[1] || '').toString().trim();
         const cntrVal = (row[2] || '').toString().trim();
@@ -908,17 +904,17 @@
         const managerVal = (row[14] || '').toString().trim();
         const detentionFormatted = formatDateString(row[11]);
 
-        // 17, 18번처럼 컨테이너 번호가 비어있고 규격이나 화주 쪽에 긴 텍스트가 들어있는 특수(병합) 행 감지
-        const isMergedSpecialRow = (!cntrVal && (shipperVal || specVal));
+        // 17, 18번처럼 컨테이너 번호와 규격이 비어있고 화주나 비고 쪽에 텍스트가 들어있는 병합 행 감지
+        const isMergedSpecialRow = (!cntrVal && !specVal && (shipperVal || row[12] || row[13] || managerVal));
 
         if (isMergedSpecialRow) {
-          const mergedText = shipperVal || specVal;
+          // 행 전체를 가로로 병합하여 텍스트가 깔끔하게 쭉 나오도록 처리
+          const mergedText = shipperVal || row[12] || managerVal;
           tr.innerHTML = `
             <td class="py-3 px-3 text-center bg-blue-100/65 border-r font-bold text-sm">${noVal || (idx + 1)}</td>
-            <td colspan="13" class="py-3 px-3 border-r bg-blue-50/40">
+            <td colspan="14" class="py-3 px-3 border-r bg-blue-50/40">
               <input type="text" value="${mergedText}" class="w-full text-center border border-blue-300 rounded px-3 py-2 text-xs font-black text-blue-900 bg-white shadow-inner" onchange="updateExportSheetField(this, 5, 'import-table-body', 'import')">
             </td>
-            <td class="py-3 px-3 border-r"><input type="text" value="${managerVal}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 15, 'import-table-body', 'import')"></td>
             <td class="py-3 px-3 border-r min-w-[140px]">
               <select class="import-status-select w-full border bg-white text-slate-700 font-bold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer" onchange="updateExportStatusOrWorker(this, 33, 'status', ${idx}, 'import')">
                 <option value="NONE" selected>선택 안함</option>
@@ -937,7 +933,7 @@
             </td>
           `;
         } else {
-          // 일반 표준 행 출력 (컬럼 순서 완벽 일치)
+          // 일반 표준 행 출력
           tr.innerHTML = `
             <td class="py-3 px-3 text-center bg-blue-100/60 border-r font-bold text-sm">${noVal || (idx + 1)}</td>
             <td class="py-3 px-3 border-r"><input type="text" value="${specVal}" class="w-full text-center border rounded px-2 py-1.5 text-xs" onchange="updateExportSheetField(this, 2, 'import-table-body', 'import')"></td>
@@ -952,7 +948,7 @@
             <td class="py-3 px-3 border-r"><input type="text" value="${row[10] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 11, 'import-table-body', 'import')"></td>
             <td class="py-3 px-3 border-r"><input type="text" value="${detentionFormatted}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 12, 'import-table-body', 'import')"></td>
             <td class="py-3 px-3 border-r"><input type="text" value="${row[12] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 13, 'import-table-body', 'import')"></td>
-            <td class="py-3 px-3 border-r"><input type="text" value="${row[13] || ''}" class="w-full text-center border rounded px-2.5 py-1 text-xs" onchange="updateExportSheetField(this, 14, 'import-table-body', 'import')"></td>
+            <td class="py-3 px-3 border-r"><input type="text" value="${row[13] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 14, 'import-table-body', 'import')"></td>
             <td class="py-3 px-3 border-r"><input type="text" value="${managerVal}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 15, 'import-table-body', 'import')"></td>
             <td class="py-3 px-3 border-r min-w-[140px]">
               <select class="import-status-select w-full border bg-white text-slate-700 font-bold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer" onchange="updateExportStatusOrWorker(this, 33, 'status', ${idx}, 'import')">
@@ -1154,7 +1150,7 @@
       }
 
       if (shoringVal.toUpperCase() === 'X') {
-        if (xDisplay) xDisplay.classList.remove('hidden');
+        if (xDisplay) xDisplay.classList.add('hidden'); // 병합 행 처리
         selectEl.className = "export-status-select w-full border border-amber-300 bg-amber-50 text-amber-900 font-extrabold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer";
         return;
       }
