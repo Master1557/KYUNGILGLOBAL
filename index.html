@@ -148,7 +148,8 @@
               <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[100px]">운송사</th>
               <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[90px]">반납지</th>
               <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[90px]">디텐션</th>
-              <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[260px]">비 고</th>
+              <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[220px]">비 고</th>
+              <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[220px]">현장특이사항</th>
               <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[140px]">작업 상태</th>
               <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[140px]">작업자</th>
               <th class="py-3 px-3 text-center min-w-[210px]">작업사진</th>
@@ -156,7 +157,7 @@
           </thead>
           <tbody id="import-table-body" class="divide-y divide-slate-200 font-medium text-xs">
             <tr>
-              <td colspan="16" class="text-center py-12 text-slate-400 font-semibold">
+              <td colspan="17" class="text-center py-12 text-slate-400 font-semibold">
                 우측 상단 톱니바퀴(⚙️) 버튼을 눌러 구글 Apps Script 웹 앱 URL을 입력해 주세요.
               </td>
             </tr>
@@ -195,7 +196,8 @@
               <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[80px]">중량</th>
               <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[80px]">CLS</th>
               <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[100px]" id="shoring-header">쇼링</th>
-              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[260px]">비 고</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[220px]">비 고</th>
+              <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[220px]">현장특이사항</th>
               <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[150px]">B/K NO.</th>
               <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[130px]">담당자</th>
               <th class="py-3 px-3 text-center border-r border-yellow-500 min-w-[140px]">작업 상태</th>
@@ -205,7 +207,7 @@
           </thead>
           <tbody id="export-table-body" class="divide-y divide-slate-200 font-medium text-xs">
             <tr>
-              <td colspan="17" class="text-center py-12 text-slate-400 font-semibold">
+              <td colspan="18" class="text-center py-12 text-slate-400 font-semibold">
                 우측 상단 톱니바퀴(⚙️) 버튼을 눌러 구글 Apps Script 웹 앱 URL을 입력해 주세요.
               </td>
             </tr>
@@ -362,6 +364,9 @@
     let lastExportRows = [];
     let lastRawDataString = "";
 
+    // 담당자 공통 리스트 (황정환, 민태경, 김지홍 추가)
+    const workerList = ["조인효", "윤동현", "이예성", "김찬양", "황정환", "민태경", "김지홍"];
+
     lucide.createIcons();
 
     dashboardRef.on('value', (snapshot) => {
@@ -416,7 +421,6 @@
         tr.className = "hover:bg-slate-50/80 transition";
         const typeStyle = item.workType && item.workType.includes('상차') ? `<span class="text-amber-500 font-bold">${item.workType}</span>` : `<span class="text-blue-600 font-bold">${item.workType || '하차(입고)'}</span>`;
 
-        const workerList = ["조인효", "윤동현", "이예성", "김찬양"];
         let workerOptions = `<option value="">선택 안함</option>`;
         workerList.forEach(w => {
           const selected = item.worker === w ? 'selected' : '';
@@ -868,7 +872,7 @@
       }
     }
 
-    // --- 수입 현황판 렌더링 함수 (병합 행 전용 가로 관통 처리 수정 완료) ---
+    // --- 수입 현황판 렌더링 함수 ---
     function renderImportTable(rows) {
       const tbody = document.getElementById('import-table-body');
       if (!tbody) return;
@@ -879,7 +883,7 @@
 
       tbody.innerHTML = '';
       if (rows.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="16" class="text-center py-8 text-slate-400 font-semibold">시트에 데이터가 없습니다.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="17" class="text-center py-8 text-slate-400 font-semibold">시트에 데이터가 없습니다.</td></tr>`;
         return;
       }
 
@@ -887,7 +891,6 @@
         const tr = document.createElement('tr');
         tr.className = "hover:bg-slate-50 transition";
         
-        const workerList = ["조인효", "윤동현", "이예성", "김찬양"];
         let importWorkerOptions = `<option value="">선택 안함</option>`;
         const savedWorker = exportStatusMap[`import_${idx}_worker`] !== undefined ? exportStatusMap[`import_${idx}_worker`] : '';
         workerList.forEach(w => {
@@ -901,15 +904,15 @@
         const shipperVal = (row[4] || '').toString().trim();
         const noteVal = (row[12] || '').toString().trim();
         const detentionFormatted = formatDateString(row[11]);
+        const savedSiteIssue = exportStatusMap[`import_${idx}_siteIssue`] !== undefined ? exportStatusMap[`import_${idx}_siteIssue`] : '';
 
-        // ★ 핵심 수정: 규격(specVal) 또는 화주(shipperVal) 등에 긴 텍스트가 있으면서 컨테이너 번호(cntrVal)가 없는 행은 가로로 병합
         const isMergedSpecialRow = (!cntrVal && (specVal || shipperVal || noteVal));
 
         if (isMergedSpecialRow) {
           const mergedText = specVal || shipperVal || noteVal;
           tr.innerHTML = `
             <td class="py-3 px-3 text-center bg-blue-100/65 border-r font-bold text-sm">${noVal || (idx + 1)}</td>
-            <td colspan="12" class="py-3 px-3 border-r bg-blue-50/40">
+            <td colspan="13" class="py-3 px-3 border-r bg-blue-50/40">
               <input type="text" value="${mergedText}" class="w-full text-center border border-blue-300 rounded px-3 py-2 text-xs font-black text-blue-900 bg-white shadow-inner" onchange="updateExportSheetField(this, 2, 'import-table-body', 'import')">
             </td>
             <td class="py-3 px-3 border-r min-w-[140px]">
@@ -930,7 +933,6 @@
             </td>
           `;
         } else {
-          // 일반 표준 행 출력
           tr.innerHTML = `
             <td class="py-3 px-3 text-center bg-blue-100/60 border-r font-bold text-sm">${noVal || (idx + 1)}</td>
             <td class="py-3 px-3 border-r"><input type="text" value="${specVal}" class="w-full text-center border rounded px-2 py-1.5 text-xs" onchange="updateExportSheetField(this, 2, 'import-table-body', 'import')"></td>
@@ -945,6 +947,7 @@
             <td class="py-3 px-3 border-r"><input type="text" value="${row[10] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 11, 'import-table-body', 'import')"></td>
             <td class="py-3 px-3 border-r"><input type="text" value="${detentionFormatted}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 12, 'import-table-body', 'import')"></td>
             <td class="py-3 px-3 border-r"><input type="text" value="${noteVal}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 13, 'import-table-body', 'import')"></td>
+            <td class="py-3 px-3 border-r"><input type="text" value="${savedSiteIssue}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs bg-slate-50" placeholder="특이사항 입력" onchange="updateExportStatusOrWorker(this, 35, 'siteIssue', ${idx}, 'import')"></td>
             <td class="py-3 px-3 border-r min-w-[140px]">
               <select class="import-status-select w-full border bg-white text-slate-700 font-bold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer" onchange="updateExportStatusOrWorker(this, 33, 'status', ${idx}, 'import')">
                 <option value="NONE" selected>선택 안함</option>
@@ -1023,7 +1026,7 @@
 
       tbody.innerHTML = '';
       if (rows.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="17" class="text-center py-8 text-slate-400 font-semibold">시트에 데이터가 없습니다.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="18" class="text-center py-8 text-slate-400 font-semibold">시트에 데이터가 없습니다.</td></tr>`;
         return;
       }
 
@@ -1032,7 +1035,6 @@
         const tr = document.createElement('tr');
         tr.className = "hover:bg-slate-50 transition";
         
-        const workerList = ["조인효", "윤동현", "이예성", "김찬양"];
         let exportWorkerOptions = `<option value="">선택 안함</option>`;
         const savedWorker = exportStatusMap[`row_${idx}_worker`] !== undefined ? exportStatusMap[`row_${idx}_worker`] : (row[33] || '');
         workerList.forEach(w => {
@@ -1040,6 +1042,7 @@
           exportWorkerOptions += `<option value="${w}" ${selected}>${w}</option>`;
         });
 
+        const savedSiteIssue = exportStatusMap[`row_${idx}_siteIssue`] !== undefined ? exportStatusMap[`row_${idx}_siteIssue`] : '';
         const p1Data = exportPhotosMap[`row_${idx}_photo_1`];
         const p2Data = exportPhotosMap[`row_${idx}_photo_2`];
         let identifier = (row[2] || '사진').toString().trim();
@@ -1056,7 +1059,8 @@
           <td class="py-3 px-3 border-r"><input type="text" value="${row[8] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 9, 'export-table-body', 'export')"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[11] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 12, 'export-table-body', 'export')"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${shoringVal}" class="shoring-input w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 13, 'export-table-body', 'export'); updateRowCondition(this);"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[13] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 14, 'export-table-body', 'export')"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[13] || ''}" class="w-full text-center border rounded px-2.5 py-1 text-xs" onchange="updateExportSheetField(this, 14, 'export-table-body', 'export')"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${savedSiteIssue}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs bg-slate-50" placeholder="특이사항 입력" onchange="updateExportStatusOrWorker(this, 35, 'siteIssue', ${idx}, 'export')"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[14] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 15, 'export-table-body', 'export')"></td>
           <td class="py-3 px-3 border-r min-w-[140px]"><input type="text" value="${row[15] || ''}" class="w-full text-center bg-slate-50 border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 16, 'export-table-body', 'export')"></td>
           <td class="py-3 px-3 border-r min-w-[150px]">
