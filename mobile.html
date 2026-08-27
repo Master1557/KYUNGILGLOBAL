@@ -81,6 +81,12 @@
       <span class="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-xl">대기중: <span id="mobile-count-waiting">0</span>건</span>
     </div>
 
+    <!-- 대시보드 검색창 추가 -->
+    <div class="bg-white p-2.5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-2">
+      <i data-lucide="search" class="w-4 h-4 text-slate-400 ml-1"></i>
+      <input type="text" id="dashboard-search-input" oninput="renderMobileDashboard(dashboardMap)" placeholder="차량번호, 화주명, 연락처, 비고 검색..." class="w-full text-xs outline-none bg-transparent font-semibold text-slate-700">
+    </div>
+
     <div id="mobile-dashboard-container" class="space-y-3">
       <div class="text-center py-12 text-slate-400 font-semibold bg-white rounded-2xl p-6 border border-slate-200">
         접수된 데이터가 없습니다.
@@ -98,6 +104,12 @@
       <button onclick="fetchSheetData(localStorage.getItem('sheetWebAppUrl'))" class="bg-slate-800 text-white px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1 shadow cursor-pointer">
         <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i> 새로고침
       </button>
+    </div>
+
+    <!-- 수출 현황판 검색창 추가 -->
+    <div class="bg-white p-2.5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-2">
+      <i data-lucide="search" class="w-4 h-4 text-slate-400 ml-1"></i>
+      <input type="text" id="export-search-input" oninput="renderMobileExportCards(lastSheetRows)" placeholder="CNTR#, 화주, 규격, SEAL, 쇼링 검색..." class="w-full text-xs outline-none bg-transparent font-semibold text-slate-700">
     </div>
 
     <div id="mobile-export-container" class="space-y-3">
@@ -307,7 +319,7 @@
       "로케트": "051-442-0058", "로켓트": "051-442-0058",
       "하람": "010-9419-2245", "더옥": "051-971-6949",
       "우영": "051-643-2333", "신성": "051-634-4353", "신성TLS": "051-634-4353",
-      "동해": "051-464-8588", "카스": "051-463-9525", "하나": "051-753-3618",
+      "동해": "051-464-8588", "카с": "051-463-9525", "하나": "051-753-3618",
       "대명": "051-637-4667", "SL": "010-8014-4276",
       "씨어코리아": "010-2515-4542", "씨어": "010-2515-4542", "세아": "010-2515-4542",
       "제이원": "010-9649-9399"
@@ -410,12 +422,23 @@
       document.getElementById('mobile-count-waiting').innerText = waitingCount;
       document.getElementById('mobile-nav-badge').innerText = waitingCount;
 
-      if (keys.length === 0) {
-        container.innerHTML = `<div class="text-center py-12 text-slate-400 font-semibold bg-white rounded-2xl p-6 border border-slate-200">등록된 접수 건이 없습니다.</div>`;
+      const searchInput = document.getElementById('dashboard-search-input');
+      const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+      // 검색 필터 적용
+      const filteredKeys = keys.filter(key => {
+        if (!keyword) return true;
+        const item = data[key];
+        const searchTarget = `${item.carNumber || ''} ${item.clientName || ''} ${item.phoneNumber || ''} ${item.note || ''} ${item.manager || ''} ${item.workType || ''}`.toLowerCase();
+        return searchTarget.includes(keyword);
+      });
+
+      if (filteredKeys.length === 0) {
+        container.innerHTML = `<div class="text-center py-12 text-slate-400 font-semibold bg-white rounded-2xl p-6 border border-slate-200">검색 결과가 없습니다.</div>`;
         return;
       }
 
-      keys.reverse().forEach(key => {
+      filteredKeys.reverse().forEach(key => {
         const item = data[key];
         const workerList = ["조인효", "윤동현", "이예성", "김찬양"];
         let workerOptions = `<option value="">작업자 선택</option>`;
@@ -458,7 +481,6 @@
             <input type="text" value="${item.note || ''}" onchange="updateDashboardField('${key}', 'note', this.value)" class="w-full bg-white border rounded px-2 py-1 text-xs font-medium">
           </div>
 
-          <!-- ★ 현장특이사항 입력 칸 추가 -->
           <div class="bg-slate-50 p-2 rounded-xl border border-slate-100 text-xs">
             <span class="text-slate-400 block text-[10px] mb-0.5">현장특이사항</span>
             <input type="text" value="${item.siteIssue || ''}" onchange="updateDashboardField('${key}', 'siteIssue', this.value)" placeholder="현장 특이사항을 입력하세요" class="w-full bg-white border rounded px-2 py-1 text-xs font-medium">
@@ -501,12 +523,22 @@
       if (!container) return;
       container.innerHTML = '';
 
-      if (rows.length === 0) {
-        container.innerHTML = `<div class="text-center py-12 text-slate-400 font-semibold bg-white rounded-2xl p-6 border border-slate-200">데이터가 없습니다.</div>`;
+      const searchInput = document.getElementById('export-search-input');
+      const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+      // 검색 필터 적용
+      const filteredRows = rows.map((row, idx) => ({ row, idx })).filter(({ row }) => {
+        if (!keyword) return true;
+        const searchTarget = `${row[1] || ''} ${row[2] || ''} ${row[3] || ''} ${row[4] || ''} ${row[12] || ''} ${row[13] || ''} ${row[14] || ''}`.toLowerCase();
+        return searchTarget.includes(keyword);
+      });
+
+      if (filteredRows.length === 0) {
+        container.innerHTML = `<div class="text-center py-12 text-slate-400 font-semibold bg-white rounded-2xl p-6 border border-slate-200">검색 결과가 없습니다.</div>`;
         return;
       }
 
-      rows.forEach((row, idx) => {
+      filteredRows.forEach(({ row, idx }) => {
         const no = row[0] || (idx + 1);
         const spec = row[1] || '-';
         const cntr = row[2] || 'CNTR 없음';
