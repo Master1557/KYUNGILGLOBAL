@@ -871,67 +871,53 @@
       }
     }
 
-    // ★ 입고 구간 파싱 (실제 시트 구조 인덱스 반영)
+    // ★ 입고 구간 정확히 분리 ('수입작업 (입고)' ~ '수입작업 (출고)' 사이)
     function getInboundRows(rows) {
       let inboundList = [];
-      let startIdx = -1;
-      let endIdx = -1;
-
+      let capture = false;
       for (let i = 0; i < rows.length; i++) {
         let rowText = rows[i].join(" ");
-        if (rowText.includes('입고')) {
-          startIdx = i + 1;
+        if (rowText.includes('수입작업') && rowText.includes('입고')) {
+          capture = true;
+          continue;
+        }
+        if (rowText.includes('수입작업') && rowText.includes('출고')) {
+          capture = false;
           break;
         }
-      }
-
-      for (let i = (startIdx !== -1 ? startIdx : 0); i < rows.length; i++) {
-        let rowText = rows[i].join(" ");
-        if (rowText.includes('출고')) {
-          endIdx = i;
-          break;
-        }
-      }
-
-      if (startIdx === -1) startIdx = 2;
-      if (endIdx === -1) endIdx = rows.length;
-
-      for (let i = startIdx; i < endIdx; i++) {
-        let colNO = (rows[i][1] || '').toString().trim();
-        let colCNTR = (rows[i][3] || '').toString().trim();
-        if (colNO !== "" || colCNTR !== "") {
-          inboundList.push({ originalIndex: i, data: rows[i] });
+        if (capture) {
+          let colNO = (rows[i][1] || '').toString().trim();
+          let colCNTR = (rows[i][3] || '').toString().trim();
+          if (colNO !== "" || colCNTR !== "") {
+            inboundList.push({ originalIndex: i, data: rows[i] });
+          }
         }
       }
       return inboundList;
     }
 
-    // ★ 수출 구간 파싱
+    // ★ 수출 구간 정확히 분리 ('수입작업 (출고)' 이후부터 끝까지)
     function getExportRows(rows) {
       let exportList = [];
-      let startIdx = -1;
-
+      let capture = false;
       for (let i = 0; i < rows.length; i++) {
         let rowText = rows[i].join(" ");
-        if (rowText.includes('출고')) {
-          startIdx = i + 1;
-          break;
+        if (rowText.includes('수입작업') && rowText.includes('출고')) {
+          capture = true;
+          continue;
         }
-      }
-
-      if (startIdx === -1) startIdx = 14;
-
-      for (let i = startIdx; i < rows.length; i++) {
-        let colNO = (rows[i][1] || '').toString().trim();
-        let colCNTR = (rows[i][3] || '').toString().trim();
-        if (colNO !== "" || colCNTR !== "") {
-          exportList.push({ originalIndex: i, data: rows[i] });
+        if (capture) {
+          let colNO = (rows[i][1] || '').toString().trim();
+          let colCNTR = (rows[i][3] || '').toString().trim();
+          if (colNO !== "" || colCNTR !== "") {
+            exportList.push({ originalIndex: i, data: rows[i] });
+          }
         }
       }
       return exportList;
     }
 
-    // ★ 입고시트 렌더링 (인덱스 맵핑 정확히 맞춤)
+    // ★ 입고시트 렌더링
     function renderInboundTable(rows) {
       const tbody = document.getElementById('inbound-table-body');
       if (!tbody) return;
@@ -1068,7 +1054,7 @@
       return null;
     }
 
-    // ★ 수출 현황판 렌더링 (원본 스프레드시트 구조 인덱스 완벽 반영)
+    // ★ 수출 현황판 렌더링
     function renderExportTable(rows) {
       const tbody = document.getElementById('export-table-body');
       if (!tbody) return;
@@ -1088,7 +1074,7 @@
       exportItems.forEach((item, displayIdx) => {
         const idx = item.originalIndex;
         const row = item.data;
-        const shoringVal = (row[11] || '').toString().trim(); // 쇼링 열
+        const shoringVal = (row[11] || '').toString().trim();
         const tr = document.createElement('tr');
         tr.className = "hover:bg-slate-50 transition";
         tr.setAttribute('data-original-index', idx);
@@ -1117,7 +1103,7 @@
           <td class="py-3 px-3 border-r"><input type="text" value="${row[9] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 9)"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[10] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 10)"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${shoringVal}" class="shoring-input w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 11); updateRowCondition(this);"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[12] || ''}" class="w-full text-center border rounded px-2.5 py-1 text-xs" onchange="updateExportSheetField(this, 12)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[12] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 12)"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[13] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 13)"></td>
           <td class="py-3 px-3 border-r min-w-[140px]"><input type="text" value="${row[14] || ''}" class="w-full text-center bg-slate-50 border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 14)"></td>
           <td class="py-3 px-3 border-r min-w-[150px]">
