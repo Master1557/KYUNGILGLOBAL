@@ -126,7 +126,7 @@
         <div class="flex items-center gap-2">
           <i data-lucide="arrow-down-left" class="w-5 h-5 text-blue-700"></i>
           <h2 class="font-bold text-slate-800 text-lg">수입 작업(입고) 예정 현황 (구글 시트 연동)</h2>
-          <span id="import-sync-status-badge" class="text-xs text-blue-800 ml-2 bg-blue-300 px-2.5 py-1 rounded-full font-bold">대기 중</span>
+          <span id="import-sync-status-badge" class="text-xs text-blue-800 ml-2 bg-blue-200 px-2.5 py-1 rounded-full font-bold">대기 중</span>
         </div>
         <button onclick="fetchSheetData(localStorage.getItem('sheetWebAppUrl'))" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition shadow-sm cursor-pointer">
           <i data-lucide="rotate-cw" class="w-4 h-4"></i> 실시간 동기화
@@ -169,7 +169,7 @@
     </div>
   </main>
 
-  <!-- TAB 3: Export Status Board -->
+  <!-- TAB 3: Export Status Board (수출 현황판) -->
   <main id="tab-export" class="max-w-full w-[98%] mx-auto px-4 py-6 space-y-6 hidden export-fit-container">
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
       <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-yellow-400/20">
@@ -361,8 +361,9 @@
     let exportPhotosMap = {};
     let exportStatusMap = {};
     let currentWaitingCount = 0;
-    let lastSheetRows = []; 
-    let lastRawDataString = ""; 
+    let lastImportRows = [];
+    let lastExportRows = [];
+    let lastRawDataString = "";
 
     lucide.createIcons();
 
@@ -376,17 +377,17 @@
     exportPhotosRef.on('value', (snapshot) => {
       exportPhotosMap = snapshot.val() || {};
       renderDashboardTable(localDataMap);
-      if (lastSheetRows.length > 0) {
-        renderImportTable(lastSheetRows);
-        renderExportTable(lastSheetRows);
+      if (lastImportRows.length > 0 || lastExportRows.length > 0) {
+        renderImportTable(lastImportRows);
+        renderExportTable(lastExportRows);
       }
     });
 
     exportStatusRef.on('value', (snapshot) => {
       exportStatusMap = snapshot.val() || {};
-      if (lastSheetRows.length > 0) {
-        renderImportTable(lastSheetRows);
-        renderExportTable(lastSheetRows);
+      if (lastImportRows.length > 0 || lastExportRows.length > 0) {
+        renderImportTable(lastImportRows);
+        renderExportTable(lastExportRows);
       }
     });
 
@@ -779,27 +780,12 @@
       if (oldScript) oldScript.remove();
 
       window.onSheetDataReceived = function(data) {
-        lastSheetRows = data || [];
-        
-        if (lastSheetRows.length > 0) {
-          const currentFirstCntr = (lastSheetRows[0][2] || '').toString().trim();
-          const savedFirstCntr = localStorage.getItem('lastCheckedFirstCntr') || "";
-          const todayDateStr = new Date().toDateString();
-          const savedDateStr = localStorage.getItem('lastCheckedDate') || "";
+        // 백엔드에서 객체 형태로 수입/수출 데이터를 나누어 반환받음
+        lastImportRows = data.importRows || [];
+        lastExportRows = data.exportRows || [];
 
-          if (savedDateStr !== todayDateStr || (savedFirstCntr && savedFirstCntr !== currentFirstCntr)) {
-            exportPhotosRef.remove();
-            exportStatusRef.remove();
-            localStorage.setItem('lastCheckedFirstCntr', currentFirstCntr);
-            localStorage.setItem('lastCheckedDate', todayDateStr);
-          } else if (!savedFirstCntr) {
-            localStorage.setItem('lastCheckedFirstCntr', currentFirstCntr);
-            localStorage.setItem('lastCheckedDate', todayDateStr);
-          }
-        }
-
-        renderImportTable(lastSheetRows);
-        renderExportTable(lastSheetRows);
+        renderImportTable(lastImportRows);
+        renderExportTable(lastExportRows);
 
         ['import-sync-status-badge', 'sync-status-badge'].forEach(id => {
           const badge = document.getElementById(id);
@@ -826,6 +812,7 @@
         try {
           const formData = new URLSearchParams();
           formData.append('action', 'updateCell');
+          formData.append('sheetType', prefix); // 수입/수출 구분 전달
           formData.append('row', rowIndex);
           formData.append('col', colIndex);
           formData.append('value', value);
@@ -836,7 +823,7 @@
       }
     }
 
-    async function updateExportSheetField(element, colIndex, tableBodyId = 'export-table-body') {
+    async function updateExportSheetField(element, colIndex, tableBodyId = 'export-table-body', prefix = 'row') {
       const webAppUrl = document.getElementById('sheet-url-input').value.trim();
       if (!webAppUrl) return;
 
@@ -850,6 +837,7 @@
       try {
         const formData = new URLSearchParams();
         formData.append('action', 'updateCell');
+        formData.append('sheetType', prefix);
         formData.append('row', rowIndex);
         formData.append('col', colIndex);
         formData.append('value', value);
@@ -905,20 +893,20 @@
 
         tr.innerHTML = `
           <td class="py-3 px-3 text-center bg-blue-100/60 border-r font-bold text-sm">${row[0] || (idx + 1)}</td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[1] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs" onchange="updateExportSheetField(this, 2, 'import-table-body')"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[2] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 3, 'import-table-body')"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[3] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 4, 'import-table-body')"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[4] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 5, 'import-table-body')"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[5] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 6, 'import-table-body')"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[6] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 7, 'import-table-body')"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[7] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 8, 'import-table-body')"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[8] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 9, 'import-table-body')"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[9] || ''}" class="w-full text-center border rounded px-2.5 py-1 text-xs" onchange="updateExportSheetField(this, 10, 'import-table-body')"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[10] || ''}" class="w-full text-center border rounded px-2.5 py-1 text-xs" onchange="updateExportSheetField(this, 11, 'import-table-body')"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[11] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 12, 'import-table-body')"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[12] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 13, 'import-table-body')"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[13] || ''}" class="w-full text-center border rounded px-2.5 py-1 text-xs" onchange="updateExportSheetField(this, 14, 'import-table-body')"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[14] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 15, 'import-table-body')"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[1] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs" onchange="updateExportSheetField(this, 2, 'import-table-body', 'import')"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[2] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 3, 'import-table-body', 'import')"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[3] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 4, 'import-table-body', 'import')"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[4] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 5, 'import-table-body', 'import')"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[5] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 6, 'import-table-body', 'import')"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[6] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 7, 'import-table-body', 'import')"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[7] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 8, 'import-table-body', 'import')"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[8] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 9, 'import-table-body', 'import')"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[9] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 10, 'import-table-body', 'import')"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[10] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 11, 'import-table-body', 'import')"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[11] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 12, 'import-table-body', 'import')"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[12] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 13, 'import-table-body', 'import')"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[13] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 14, 'import-table-body', 'import')"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[14] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 15, 'import-table-body', 'import')"></td>
           <td class="py-3 px-3 border-r min-w-[140px]">
             <select class="import-status-select w-full border bg-white text-slate-700 font-bold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer" onchange="updateExportStatusOrWorker(this, 33, 'status', ${idx}, 'import')">
               <option value="NONE" selected>선택 안함</option>
@@ -1038,21 +1026,21 @@
 
         tr.innerHTML = `
           <td class="py-3 px-3 text-center bg-green-100/60 border-r font-bold text-sm">${row[0] || (idx + 1)}</td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[1] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs" onchange="updateExportSheetField(this, 2)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[2] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 3)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[3] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 4)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[4] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 5)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[5] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 6)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[6] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 7)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[7] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 8)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[8] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 9)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[11] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 12)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${shoringVal}" class="shoring-input w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 13); updateRowCondition(this);"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[13] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 14)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[14] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 15)"></td>
-          <td class="py-3 px-3 border-r min-w-[140px]"><input type="text" value="${row[15] || ''}" class="w-full text-center bg-slate-50 border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 16)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[1] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs" onchange="updateExportSheetField(this, 2, 'export-table-body', 'export')"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[2] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 3, 'export-table-body', 'export')"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[3] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 4, 'export-table-body', 'export')"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[4] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 5, 'export-table-body', 'export')"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[5] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 6, 'export-table-body', 'export')"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[6] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 7, 'export-table-body', 'export')"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[7] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 8, 'export-table-body', 'export')"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[8] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 9, 'export-table-body', 'export')"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[11] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 12, 'export-table-body', 'export')"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${shoringVal}" class="shoring-input w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 13, 'export-table-body', 'export'); updateRowCondition(this);"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[13] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 14, 'export-table-body', 'export')"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[14] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 15, 'export-table-body', 'export')"></td>
+          <td class="py-3 px-3 border-r min-w-[140px]"><input type="text" value="${row[15] || ''}" class="w-full text-center bg-slate-50 border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 16, 'export-table-body', 'export')"></td>
           <td class="py-3 px-3 border-r min-w-[150px]">
-            <select class="export-status-select w-full border bg-white text-slate-700 font-bold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer" onchange="updateExportStatusOrWorker(this, 33, 'status', ${idx}, 'row'); updateRowCondition(this);">
+            <select class="export-status-select w-full border bg-white text-slate-700 font-bold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer" onchange="updateExportStatusOrWorker(this, 33, 'status', ${idx}, 'export'); updateRowCondition(this);">
               <option value="NONE" selected>선택 안함</option>
               <option value="TALLY">TALLY완료</option>
               <option value="VANNING">적입중</option>
@@ -1060,7 +1048,7 @@
             </select>
           </td>
           <td class="py-3 px-3 border-r min-w-[140px]">
-            <select class="export-worker-select w-full border bg-white text-slate-700 font-bold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer" onchange="updateExportStatusOrWorker(this, 34, 'worker', ${idx}, 'row')">
+            <select class="export-worker-select w-full border bg-white text-slate-700 font-bold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer" onchange="updateExportStatusOrWorker(this, 34, 'worker', ${idx}, 'export')">
               ${exportWorkerOptions}
             </select>
           </td>
@@ -1169,31 +1157,15 @@
           if (oldScript) oldScript.remove();
 
           window.onSheetDataReceived = function(data) {
-            lastSheetRows = data || [];
-            
-            if (lastSheetRows.length > 0) {
-              const currentFirstCntr = (lastSheetRows[0][2] || '').toString().trim();
-              const savedFirstCntr = localStorage.getItem('lastCheckedFirstCntr') || "";
-              const todayDateStr = new Date().toDateString();
-              const savedDateStr = localStorage.getItem('lastCheckedDate') || "";
+            lastImportRows = data.importRows || [];
+            lastExportRows = data.exportRows || [];
 
-              if (savedDateStr !== todayDateStr || (savedFirstCntr && savedFirstCntr !== currentFirstCntr)) {
-                exportPhotosRef.remove();
-                exportStatusRef.remove();
-                localStorage.setItem('lastCheckedFirstCntr', currentFirstCntr);
-                localStorage.setItem('lastCheckedDate', todayDateStr);
-              } else if (!savedFirstCntr) {
-                localStorage.setItem('lastCheckedFirstCntr', currentFirstCntr);
-                localStorage.setItem('lastCheckedDate', todayDateStr);
-              }
-            }
-
-            const newDataString = JSON.stringify(lastSheetRows);
+            const newDataString = JSON.stringify(data);
             
             if (newDataString !== lastRawDataString) {
               lastRawDataString = newDataString;
-              renderImportTable(lastSheetRows);
-              renderExportTable(lastSheetRows);
+              renderImportTable(lastImportRows);
+              renderExportTable(lastExportRows);
               
               ['import-sync-status-badge', 'sync-status-badge'].forEach(id => {
                 const badge = document.getElementById(id);
