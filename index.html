@@ -363,7 +363,7 @@
     let lastImportRows = [];
     let lastExportRows = [];
     let lastRawDataString = "";
-    let isUploadingPhoto = false; // 사진 업로드 중 동기화 차단 플래그
+    let isUploadingPhoto = false;
 
     const workerList = ["조인효", "윤동현", "이예성", "김찬양", "황정환", "민태경", "김지홍"];
 
@@ -489,7 +489,7 @@
       const webAppUrl = document.getElementById('sheet-url-input').value.trim();
       if (!webAppUrl) { alert("환경설정에서 웹 앱 URL을 먼저 입력해주세요."); inputEl.value = ''; return; }
 
-      isUploadingPhoto = true; // 업로드 중 동기화 차단
+      isUploadingPhoto = true;
 
       try {
         const uploadPromises = files.map(async (file, i) => {
@@ -517,7 +517,7 @@
       } catch (error) {
         alert("업로드 실패: " + error.message);
       } finally {
-        isUploadingPhoto = false; // 업로드 완료 후 동기화 재개
+        isUploadingPhoto = false;
       }
       inputEl.value = '';
     }
@@ -659,7 +659,7 @@
       const webAppUrl = document.getElementById('sheet-url-input').value.trim();
       if (!webAppUrl) { alert("환경설정에서 웹 앱 URL을 먼저 입력해주세요."); inputEl.value = ''; return; }
 
-      isUploadingPhoto = true; // 업로드 중 동기화 차단
+      isUploadingPhoto = true;
 
       let identifier = '사진';
       if (row) {
@@ -716,7 +716,7 @@
         if (loadingBox) loadingBox.remove();
         alert("업로드 실패: " + error.message);
       } finally {
-        isUploadingPhoto = false; // 업로드 완료 후 동기화 재개
+        isUploadingPhoto = false;
       }
 
       inputEl.value = '';
@@ -792,7 +792,7 @@
     }
 
     function fetchSheetData(webAppUrl) {
-      if (!webAppUrl) return;
+      if (!webAppUrl || isUploadingPhoto) return;
       
       ['import-sync-status-badge', 'sync-status-badge'].forEach(id => {
         const badge = document.getElementById(id);
@@ -885,6 +885,7 @@
       }
     }
 
+    // --- 수입 현황판 렌더링 함수 (수출 현황판과 동일하게 사진 UI 및 보기/삭제 기능 추가 완료) ---
     function renderImportTable(rows) {
       const tbody = document.getElementById('import-table-body');
       if (!tbody) return;
@@ -917,6 +918,11 @@
         const noteVal = (row[12] || '').toString().trim();
         const detentionFormatted = formatDateString(row[11]);
         const savedSiteIssue = exportStatusMap[`import_${idx}_siteIssue`] !== undefined ? exportStatusMap[`import_${idx}_siteIssue`] : '';
+        
+        // 수입 사진 데이터 및 식별자 바인딩
+        const p1Data = exportPhotosMap[`import_${idx}_photo_1`];
+        const p2Data = exportPhotosMap[`import_${idx}_photo_2`];
+        let identifier = (cntrVal || '사진').toString().trim();
 
         const isMergedSpecialRow = (!cntrVal && (specVal || shipperVal || noteVal));
 
@@ -979,7 +985,26 @@
                   <label class="cursor-pointer bg-blue-600 text-white text-xs px-2.5 py-2 rounded font-medium">사진 1<input type="file" accept="image/*" multiple class="hidden" onchange="handleMultiplePhotos(event, 1, 'import_${idx}')"></label>
                   <label class="cursor-pointer bg-indigo-600 text-white text-xs px-2.5 py-2 rounded font-medium">사진 2<input type="file" accept="image/*" multiple class="hidden" onchange="handleMultiplePhotos(event, 2, 'import_${idx}')"></label>
                 </div>
-                <div class="photo-preview-list text-[11px] space-y-0.5"></div>
+                <div class="photo-preview-list text-[11px] space-y-0.5">
+                  ${p1Data && p1Data.urls && p1Data.urls.length > 0 ? `
+                    <div class="bg-emerald-50 px-2 py-1 rounded border border-emerald-300 font-bold text-emerald-700 flex justify-between items-center">
+                      <span>[사진1] ${p1Data.urls.length}장</span>
+                      <div class="flex gap-1">
+                        <button onclick='showPhotoModal(${JSON.stringify(p1Data.urls)}, "${identifier} - 사진 1")' class="bg-emerald-600 text-white px-1.5 py-0.5 rounded cursor-pointer">보기</button>
+                        <button onclick="deletePhotoData('import_${idx}_photo_1')" class="text-red-500 hover:text-red-700 font-bold px-1" title="사진1 삭제">🗑️</button>
+                      </div>
+                    </div>
+                  ` : ''}
+                  ${p2Data && p2Data.urls && p2Data.urls.length > 0 ? `
+                    <div class="bg-emerald-50 px-2 py-1 rounded border border-emerald-300 font-bold text-emerald-700 flex justify-between items-center">
+                      <span>[사진2] ${p2Data.urls.length}장</span>
+                      <div class="flex gap-1">
+                        <button onclick='showPhotoModal(${JSON.stringify(p2Data.urls)}, "${identifier} - 사진 2")' class="bg-emerald-600 text-white px-1.5 py-0.5 rounded cursor-pointer">보기</button>
+                        <button onclick="deletePhotoData('import_${idx}_photo_2')" class="text-red-500 hover:text-red-700 font-bold px-1" title="사진2 삭제">🗑️</button>
+                      </div>
+                    </div>
+                  ` : ''}
+                </div>
               </div>
             </td>
           `;
@@ -1188,7 +1213,6 @@
         const activeEl = document.activeElement;
         const isEditing = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT') && (activeEl.closest('#tab-export') || activeEl.closest('#tab-import'));
         
-        // 편집 중이거나 사진 업로드 중일 때는 자동 동기화를 건너뜁니다.
         if (!isEditing && !isUploadingPhoto) {
           const oldScript = document.getElementById('jsonp-auto-loader');
           if (oldScript) oldScript.remove();
