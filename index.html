@@ -868,7 +868,7 @@
       }
     }
 
-    // --- 수입 현황판 렌더링 함수 (병합 행 전체 가로 관통 처리) ---
+    // --- 수입 현황판 렌더링 함수 (병합 행 전용 가로 관통 처리 수정 완료) ---
     function renderImportTable(rows) {
       const tbody = document.getElementById('import-table-body');
       if (!tbody) return;
@@ -895,9 +895,6 @@
           importWorkerOptions += `<option value="${w}" ${selected}>${w}</option>`;
         });
 
-        // 수입 시트 컬럼 구조 (담당자/BLNO 칸 제외)
-        // row[0]:NO, row[1]:규격, row[2]:CNTR#, row[3]:SEAL, row[4]:화주, row[5]:ITEM, row[6]:LINE
-        // row[7]:수량, row[8]:중량, row[9]:운송사, row[10]:반납지, row[11]:디텐션, row[12]:비고
         const noVal = (row[0] || '').toString().trim();
         const specVal = (row[1] || '').toString().trim();
         const cntrVal = (row[2] || '').toString().trim();
@@ -905,15 +902,15 @@
         const noteVal = (row[12] || '').toString().trim();
         const detentionFormatted = formatDateString(row[11]);
 
-        // 17, 18번처럼 컨테이너 번호와 규격이 비어있고 텍스트가 길게 들어오는 병합 행 감지
-        const isMergedSpecialRow = (!cntrVal && !specVal && (shipperVal || noteVal));
+        // ★ 핵심 수정: 규격(specVal) 또는 화주(shipperVal) 등에 긴 텍스트가 있으면서 컨테이너 번호(cntrVal)가 없는 행은 가로로 병합
+        const isMergedSpecialRow = (!cntrVal && (specVal || shipperVal || noteVal));
 
         if (isMergedSpecialRow) {
-          const mergedText = shipperVal || noteVal;
+          const mergedText = specVal || shipperVal || noteVal;
           tr.innerHTML = `
             <td class="py-3 px-3 text-center bg-blue-100/65 border-r font-bold text-sm">${noVal || (idx + 1)}</td>
             <td colspan="12" class="py-3 px-3 border-r bg-blue-50/40">
-              <input type="text" value="${mergedText}" class="w-full text-center border border-blue-300 rounded px-3 py-2 text-xs font-black text-blue-900 bg-white shadow-inner" onchange="updateExportSheetField(this, 5, 'import-table-body', 'import')">
+              <input type="text" value="${mergedText}" class="w-full text-center border border-blue-300 rounded px-3 py-2 text-xs font-black text-blue-900 bg-white shadow-inner" onchange="updateExportSheetField(this, 2, 'import-table-body', 'import')">
             </td>
             <td class="py-3 px-3 border-r min-w-[140px]">
               <select class="import-status-select w-full border bg-white text-slate-700 font-bold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer" onchange="updateExportStatusOrWorker(this, 33, 'status', ${idx}, 'import')">
@@ -942,7 +939,7 @@
             <td class="py-3 px-3 border-r"><input type="text" value="${shipperVal}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 5, 'import-table-body', 'import')"></td>
             <td class="py-3 px-3 border-r"><input type="text" value="${row[5] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 6, 'import-table-body', 'import')"></td>
             <td class="py-3 px-3 border-r"><input type="text" value="${row[6] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 7, 'import-table-body', 'import')"></td>
-            <td class="py-3 px-3 border-r"><input type="text" value="${row[7] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 8, 'import-table-body', 'import')"></td>
+            <td class="py-3 px-3 border-r"><input type="text" value="${row[7] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 8, 'import-table-body', 'import')"></td>
             <td class="py-3 px-3 border-r"><input type="text" value="${row[8] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 9, 'import-table-body', 'import')"></td>
             <td class="py-3 px-3 border-r"><input type="text" value="${row[9] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 10, 'import-table-body', 'import')"></td>
             <td class="py-3 px-3 border-r"><input type="text" value="${row[10] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 11, 'import-table-body', 'import')"></td>
@@ -1055,7 +1052,7 @@
           <td class="py-3 px-3 border-r"><input type="text" value="${row[4] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 5, 'export-table-body', 'export')"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[5] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 6, 'export-table-body', 'export')"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[6] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 7, 'export-table-body', 'export')"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[7] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 8, 'export-table-body', 'export')"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[7] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 8, 'export-table-body', 'export')"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[8] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 9, 'export-table-body', 'export')"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[11] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 12, 'export-table-body', 'export')"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${shoringVal}" class="shoring-input w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 13, 'export-table-body', 'export'); updateRowCondition(this);"></td>
