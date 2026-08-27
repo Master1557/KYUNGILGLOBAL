@@ -205,8 +205,8 @@
     let lastSheetRows = [];
     let lastRawDataString = "";
     let isInitialDashboardLoad = true;
+    let isUploadingPhoto = false; // 사진 업로드 중 동기화 차단 플래그
 
-    // 담당자 리스트 공통 정의 (황정환, 민태경, 김지홍 추가)
     const workerList = ["조인효", "윤동현", "이예성", "김찬양", "황정환", "민태경", "김지홍"];
 
     lucide.createIcons();
@@ -288,7 +288,7 @@
     }
 
     function fetchSheetData(webAppUrl) {
-      if (!webAppUrl) return;
+      if (!webAppUrl || isUploadingPhoto) return;
       const badge = document.getElementById('sync-status-badge');
       if (badge) {
         badge.className = "text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold animate-pulse";
@@ -325,10 +325,14 @@
       renderMobileDashboard(dashboardMap);
     }
 
+    // 컴퓨터 사이트와 키 규칙(import_idx_field, row_idx_field)을 완벽하게 통일
     async function updateExportStatusOrWorker(element, colIndex, fieldName, rowIndex, prefix = 'row') {
       const webAppUrl = document.getElementById('sheet-url-input').value.trim();
       const value = element.value;
+      
+      // 파이어베이스 저장 경로를 컴퓨터 사이트와 정확히 일치시킴
       exportStatusRef.child(`${prefix}_${rowIndex}_${fieldName}`).set(value);
+
       if (webAppUrl) {
         try {
           const formData = new URLSearchParams();
@@ -415,7 +419,9 @@
       if (files.length === 0) return;
 
       const webAppUrl = document.getElementById('sheet-url-input').value.trim();
-      if (!webAppUrl) { inputEl.value = ''; return; }
+      if (!webAppUrl) { alert("환경설정에서 웹 앱 URL을 먼저 입력해주세요."); inputEl.value = ''; return; }
+
+      isUploadingPhoto = true; // 업로드 중 자동 동기화 차단
 
       const card = inputEl.closest('.bg-white');
       let loadingBox = null;
@@ -453,12 +459,17 @@
         await exportPhotosRef.child(dbKey).set({ urls: combinedUrls, identifier: identifier });
       } catch (error) {
         if (loadingBox) loadingBox.remove();
-        console.error("업로드 실패: ", error);
+        alert("업로드 실패: " + error.message);
+      } finally {
+        isUploadingPhoto = false; // 업로드 완료 후 동기화 재개
       }
       inputEl.value = '';
     }
 
     function renderMobileDashboard(data) {
+      const activeEl = document.activeElement;
+      if (activeEl && activeEl.tagName === 'INPUT' && activeEl.closest('#mobile-tab-dashboard')) return;
+
       const container = document.getElementById('mobile-dashboard-container');
       if (!container) return;
       container.innerHTML = '';
@@ -563,8 +574,11 @@
       lucide.createIcons();
     }
 
-    // 모바일 수입 현황판 렌더링 (현장특이사항 추가)
+    // 모바일 수입 현황판 렌더링 (편집 중 리렌더링 방지 적용)
     function renderMobileImportCards(rows) {
+      const activeEl = document.activeElement;
+      if (activeEl && activeEl.tagName === 'INPUT' && activeEl.closest('#mobile-tab-import')) return;
+
       const container = document.getElementById('mobile-import-container');
       if (!container) return;
       container.innerHTML = '';
@@ -681,8 +695,11 @@
       lucide.createIcons();
     }
 
-    // 모바일 수출 현황판 렌더링 (현장특이사항 추가)
+    // 모바일 수출 현황판 렌더링 (편집 중 리렌더링 방지 및 prefix='row' 통일)
     function renderMobileExportCards(rows) {
+      const activeEl = document.activeElement;
+      if (activeEl && activeEl.tagName === 'INPUT' && activeEl.closest('#mobile-tab-export')) return;
+
       const container = document.getElementById('mobile-export-container');
       if (!container) return;
       container.innerHTML = '';
@@ -712,6 +729,7 @@
         const note = row[13] || '-';
         const bkNo = row[14] || '-';
 
+        // 컴퓨터 사이트와 prefix='row' 키 규칙 일치
         const savedWorker = exportStatusMap[`row_${idx}_worker`] !== undefined ? exportStatusMap[`row_${idx}_worker`] : (row[34] || '');
         const savedStatus = exportStatusMap[`row_${idx}_status`] !== undefined ? exportStatusMap[`row_${idx}_status`] : (row[33] || 'NONE');
         const savedSiteIssue = exportStatusMap[`row_${idx}_siteIssue`] !== undefined ? exportStatusMap[`row_${idx}_siteIssue`] : '';
@@ -760,29 +778,29 @@
 
           <div class="bg-slate-50 p-2 rounded-xl border border-slate-100 text-xs">
             <span class="text-slate-400 block text-[10px] mb-0.5">현장특이사항</span>
-            <input type="text" value="${savedSiteIssue}" onchange="updateExportStatusOrWorker(this, 35, 'siteIssue', ${idx}, 'export')" placeholder="현장 특이사항을 입력하세요" class="w-full bg-white border rounded px-2 py-1 text-xs font-medium">
+            <input type="text" value="${savedSiteIssue}" onchange="updateExportStatusOrWorker(this, 35, 'siteIssue', ${idx}, 'row')" placeholder="현장 특이사항을 입력하세요" class="w-full bg-white border rounded px-2 py-1 text-xs font-medium">
           </div>
 
           ${shoringDisplayHtml}
 
           <div class="grid grid-cols-2 gap-2 pt-1">
-            <select onchange="updateExportStatusOrWorker(this, 33, 'status', ${idx}, 'export')" class="w-full border border-slate-200 bg-white font-bold rounded-lg px-3 py-2 text-xs outline-none">
+            <select onchange="updateExportStatusOrWorker(this, 33, 'status', ${idx}, 'row')" class="w-full border border-slate-200 bg-white font-bold rounded-lg px-3 py-2 text-xs outline-none">
               <option value="NONE" ${savedStatus === 'NONE' ? 'selected' : ''}>상태: 선택 안함</option>
               <option value="TALLY" ${savedStatus === 'TALLY' ? 'selected' : ''}>TALLY완료</option>
               <option value="VANNING" ${savedStatus === 'VANNING' ? 'selected' : ''}>적입중</option>
               <option value="DONE" ${savedStatus === 'DONE' ? 'selected' : ''}>작업완료</option>
             </select>
-            <select onchange="updateExportStatusOrWorker(this, 34, 'worker', ${idx}, 'export')" class="w-full border border-slate-200 bg-white font-bold rounded-lg px-3 py-2 text-xs outline-none">
+            <select onchange="updateExportStatusOrWorker(this, 34, 'worker', ${idx}, 'row')" class="w-full border border-slate-200 bg-white font-bold rounded-lg px-3 py-2 text-xs outline-none">
               ${workerOptions}
             </select>
           </div>
 
           <div class="pt-2 border-t border-slate-100 flex gap-2">
             <label class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-xl text-xs text-center cursor-pointer shadow-sm">
-              📷 사진 1 업로드 <input type="file" accept="image/*" multiple class="hidden" onchange="handleMobilePhotoUpload(event, 1, ${idx}, '${cntr}', 'export')">
+              📷 사진 1 업로드 <input type="file" accept="image/*" multiple class="hidden" onchange="handleMobilePhotoUpload(event, 1, ${idx}, '${cntr}', 'row')">
             </label>
             <label class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 rounded-xl text-xs text-center cursor-pointer shadow-sm">
-              📷 사진 2 업로드 <input type="file" accept="image/*" multiple class="hidden" onchange="handleMobilePhotoUpload(event, 2, ${idx}, '${cntr}', 'export')">
+              📷 사진 2 업로드 <input type="file" accept="image/*" multiple class="hidden" onchange="handleMobilePhotoUpload(event, 2, ${idx}, '${cntr}', 'row')">
             </label>
           </div>
 
@@ -825,7 +843,8 @@
 
     setInterval(() => {
       const savedUrl = localStorage.getItem('sheetWebAppUrl');
-      if (savedUrl) fetchSheetData(savedUrl);
+      // 사진 업로드 중이 아닐 때만 주기적으로 시트 데이터를 동기화합니다.
+      if (savedUrl && !isUploadingPhoto) fetchSheetData(savedUrl);
     }, 4000);
 
     window.addEventListener('DOMContentLoaded', () => {
