@@ -42,6 +42,12 @@
         <span id="nav-badge" class="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full font-black">0</span>
       </button>
 
+      <!-- ★ 입고시트 탭 추가 -->
+      <button id="nav-inbound-btn" onclick="switchTab('inbound')" class="px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-700/50 transition">
+        <i data-lucide="arrow-down-left" class="w-4 h-4"></i>
+        <span>입고시트</span>
+      </button>
+
       <button id="nav-export-btn" onclick="switchTab('export')" class="px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-700/50 transition">
         <i data-lucide="ship" class="w-4 h-4"></i>
         <span>수출 현황판</span>
@@ -114,7 +120,56 @@
     </div>
   </main>
 
-  <!-- TAB 2: Export Status Board -->
+  <!-- TAB 2 (NEW): Inbound Sheet (입고시트) -->
+  <main id="tab-inbound" class="max-w-full w-[98%] mx-auto px-4 py-6 space-y-6 hidden export-fit-container">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+      <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-blue-400/20">
+        <div class="flex items-center gap-2">
+          <i data-lucide="arrow-down-left" class="w-5 h-5 text-blue-700"></i>
+          <h2 class="font-bold text-slate-800 text-lg">수입작업 입고 현황 (구글 시트 연동)</h2>
+          <span id="inbound-sync-status-badge" class="text-xs text-blue-800 ml-2 bg-blue-200 px-2.5 py-1 rounded-full font-bold">대기 중</span>
+        </div>
+        <button onclick="fetchSheetData(localStorage.getItem('sheetWebAppUrl'))" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition shadow-sm cursor-pointer">
+          <i data-lucide="rotate-cw" class="w-4 h-4"></i> 실시간 동기화
+        </button>
+      </div>
+
+      <div class="overflow-x-auto w-full">
+        <table class="w-full text-left text-sm text-slate-700 whitespace-nowrap">
+          <thead class="bg-blue-500 text-white font-bold text-xs border-b border-blue-600">
+            <tr>
+              <th class="py-3 px-3 text-center w-12 border-r border-blue-600">NO.</th>
+              <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[80px]">규격</th>
+              <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[140px]">CNTR#</th>
+              <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[130px]">SEAL NO.</th>
+              <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[260px]">화 주</th>
+              <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[90px]">ITEM</th>
+              <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[90px]">LINE</th>
+              <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[80px]">수량</th>
+              <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[80px]">중량</th>
+              <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[80px]">CLS</th>
+              <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[100px]">쇼링</th>
+              <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[260px]">비 고</th>
+              <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[150px]">B/K NO.</th>
+              <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[130px]">담당자</th>
+              <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[140px]">작업 상태</th>
+              <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[140px]">작업자</th>
+              <th class="py-3 px-3 text-center min-w-[210px]">작업사진</th>
+            </tr>
+          </thead>
+          <tbody id="inbound-table-body" class="divide-y divide-slate-200 font-medium text-xs">
+            <tr>
+              <td colspan="17" class="text-center py-12 text-slate-400 font-semibold">
+                데이터를 불러오는 중입니다...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- TAB 3: Export Status Board -->
   <main id="tab-export" class="max-w-full w-[98%] mx-auto px-4 py-6 space-y-6 hidden export-fit-container">
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
       <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-yellow-400/20">
@@ -163,7 +218,7 @@
     </div>
   </main>
 
-  <!-- TAB 3: Driver Access Kiosk -->
+  <!-- TAB 4: Driver Access Kiosk -->
   <section id="tab-kiosk" class="max-w-2xl mx-auto px-4 py-8 hidden">
     <div class="bg-slate-900 text-slate-100 rounded-3xl shadow-2xl border border-slate-800 overflow-hidden">
       
@@ -322,12 +377,18 @@
     exportPhotosRef.on('value', (snapshot) => {
       exportPhotosMap = snapshot.val() || {};
       renderDashboardTable(localDataMap);
-      if (lastSheetRows.length > 0) renderExportTable(lastSheetRows);
+      if (lastSheetRows.length > 0) {
+        renderInboundTable(lastSheetRows);
+        renderExportTable(lastSheetRows);
+      }
     });
 
     exportStatusRef.on('value', (snapshot) => {
       exportStatusMap = snapshot.val() || {};
-      if (lastSheetRows.length > 0) renderExportTable(lastSheetRows);
+      if (lastSheetRows.length > 0) {
+        renderInboundTable(lastSheetRows);
+        renderExportTable(lastSheetRows);
+      }
     });
 
     function renderDashboardTable(data) {
@@ -500,10 +561,21 @@
     function deleteDashboardRow(key) { if (confirm("삭제하시겠습니까?")) dashboardRef.child(key).remove(); }
 
     function switchTab(tabName) {
-      ['dashboard', 'export', 'kiosk'].forEach(t => {
-        document.getElementById(`tab-${t}`).className = (t === tabName) ? (t === 'dashboard' ? "max-w-[98%] mx-auto px-4 py-6 space-y-6 block" : t === 'export' ? "max-w-full w-[98%] mx-auto px-4 py-6 space-y-6 block export-fit-container" : "max-w-2xl mx-auto px-4 py-8 block") : "hidden";
+      ['dashboard', 'inbound', 'export', 'kiosk'].forEach(t => {
+        const el = document.getElementById(`tab-${t}`);
+        if (el) {
+          if (t === tabName) {
+            if (t === 'dashboard') el.className = "max-w-[98%] mx-auto px-4 py-6 space-y-6 block";
+            else if (t === 'inbound' || t === 'export') el.className = "max-w-full w-[98%] mx-auto px-4 py-6 space-y-6 block export-fit-container";
+            else if (t === 'kiosk') el.className = "max-w-2xl mx-auto px-4 py-8 block";
+          } else {
+            el.className = "hidden";
+          }
+        }
         const btn = document.getElementById(`nav-${t}-btn`);
-        if (btn) btn.className = (t === tabName) ? "px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition bg-blue-600 text-white shadow-sm" : "px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-700/50 transition";
+        if (btn) {
+          btn.className = (t === tabName) ? "px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition bg-blue-600 text-white shadow-sm" : "px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-700/50 transition";
+        }
       });
     }
 
@@ -581,7 +653,7 @@
       let cntrInput = row.children[2]?.querySelector('input');
       if (cntrInput && cntrInput.value) identifier = cntrInput.value.trim();
 
-      const rowIndex = Array.from(row.parentNode.children).indexOf(row);
+      const globalRowIdx = parseInt(row.getAttribute('data-original-index'), 10);
       const loadingBox = document.createElement('div');
       loadingBox.className = `flex items-center gap-1 font-semibold text-amber-700 bg-amber-100 px-2 py-1.5 rounded border border-amber-200 mt-1`;
       loadingBox.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> [사진 ${btnIndex}] ${files.length}장 업로드 중...`;
@@ -611,7 +683,7 @@
         const newUploadedUrls = await Promise.all(uploadPromises);
         loadingBox.remove();
 
-        const dbKey = `row_${rowIndex}_photo_${btnIndex}`;
+        const dbKey = `row_${globalRowIdx}_photo_${btnIndex}`;
         let existingUrls = (exportPhotosMap[dbKey] && exportPhotosMap[dbKey].urls) ? exportPhotosMap[dbKey].urls : [];
         let combinedUrls = existingUrls.concat(newUploadedUrls);
 
@@ -700,11 +772,13 @@
 
     function fetchSheetData(webAppUrl) {
       if (!webAppUrl) return;
-      const badge = document.getElementById('sync-status-badge');
-      if (badge) {
-        badge.className = "text-xs text-blue-800 ml-2 bg-blue-200 px-2.5 py-1 rounded-full font-bold animate-pulse";
-        badge.innerText = "동기화 중...";
-      }
+      ['sync-status-badge', 'inbound-sync-status-badge'].forEach(id => {
+        const badge = document.getElementById(id);
+        if (badge) {
+          badge.className = "text-xs text-blue-800 ml-2 bg-blue-200 px-2.5 py-1 rounded-full font-bold animate-pulse";
+          badge.innerText = "동기화 중...";
+        }
+      });
       const oldScript = document.getElementById('jsonp-script-loader');
       if (oldScript) oldScript.remove();
 
@@ -728,11 +802,16 @@
           }
         }
 
+        renderInboundTable(lastSheetRows);
         renderExportTable(lastSheetRows);
-        if (badge) {
-          badge.className = "text-xs text-emerald-800 ml-2 bg-emerald-200 px-2.5 py-1 rounded-full font-bold";
-          badge.innerText = "연동 완료 (" + new Date().toLocaleTimeString() + ")";
-        }
+        
+        ['sync-status-badge', 'inbound-sync-status-badge'].forEach(id => {
+          const badge = document.getElementById(id);
+          if (badge) {
+            badge.className = "text-xs text-emerald-800 ml-2 bg-emerald-200 px-2.5 py-1 rounded-full font-bold";
+            badge.innerText = "연동 완료 (" + new Date().toLocaleTimeString() + ")";
+          }
+        });
       };
 
       const script = document.createElement('script');
@@ -766,8 +845,7 @@
       if (!webAppUrl) return;
 
       const row = element.closest('tr');
-      const tbody = document.getElementById('export-table-body');
-      const rowIndex = Array.from(tbody.children).indexOf(row);
+      const rowIndex = parseInt(row.getAttribute('data-original-index'), 10);
       const value = element.value;
 
       element.classList.add('bg-yellow-50');
@@ -795,6 +873,170 @@
         element.classList.add('bg-red-50');
         alert("변경 사항 시트 저장 실패: 앱스 스크립트 배포 상태를 확인해주세요.");
       }
+    }
+
+    // ★ 스프레드시트 전체 행 데이터에서 '수입작업 (입고)' 구간만 추출하는 함수
+    function getInboundRows(rows) {
+      let inboundList = [];
+      let capture = false;
+      for (let i = 0; i < rows.length; i++) {
+        let rowStr = (rows[i][1] || '').toString();
+        // '수입작업 (입고)' 타이틀 셀을 만나면 다음 행부터 캡처 시작
+        if (rowStr.includes('수입작업 (입고)')) {
+          capture = true;
+          continue;
+        }
+        // '수입작업 (출고)' 타이틀 셀을 만나면 캡처 중지
+        if (rowStr.includes('수입작업 (출고)')) {
+          capture = false;
+        }
+        if (capture) {
+          // 실제 데이터 행(NO. 컬럼 등이 존재하거나 빈 행이 아닌 경우)만 필터링
+          let noVal = (rows[i][0] || '').toString().trim();
+          let 규격Val = (rows[i][1] || '').toString().trim();
+          let cntrVal = (rows[i][2] || '').toString().trim();
+          if (noVal !== "" || 규격Val !== "" || cntrVal !== "") {
+            inboundList.push({ originalIndex: i, data: rows[i] });
+          }
+        }
+      }
+      return inboundList;
+    }
+
+    // ★ 스프레드시트 전체 행 데이터에서 '수입작업 (출고)' 구간 이후(또는 지정된 구간) 추출하는 함수 (기존 수출 현황판)
+    function getExportRows(rows) {
+      let exportList = [];
+      let capture = false;
+      for (let i = 0; i < rows.length; i++) {
+        let rowStr = (rows[i][1] || '').toString();
+        if (rowStr.includes('수입작업 (출고)')) {
+          capture = true;
+          continue;
+        }
+        if (capture) {
+          let noVal = (rows[i][0] || '').toString().trim();
+          let 규격Val = (rows[i][1] || '').toString().trim();
+          let cntrVal = (rows[i][2] || '').toString().trim();
+          if (noVal !== "" || 규격Val !== "" || cntrVal !== "") {
+            exportList.push({ originalIndex: i, data: rows[i] });
+          }
+        }
+      }
+      // 만약 출고 타이틀을 못 찾았거나 구간 내 데이터가 없다면 기존 방식대로 하단 데이터 활용
+      if (exportList.length === 0) {
+        for (let i = 0; i < rows.length; i++) {
+          let noVal = (rows[i][0] || '').toString().trim();
+          if (noVal !== "" && !isNaN(noVal)) {
+            exportList.push({ originalIndex: i, data: rows[i] });
+          }
+        }
+      }
+      return exportList;
+    }
+
+    // ★ 입고시트 테이블 렌더링 함수
+    function renderInboundTable(rows) {
+      const tbody = document.getElementById('inbound-table-body');
+      if (!tbody) return;
+
+      const activeEl = document.activeElement;
+      const isUserEditing = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT') && activeEl.closest('#tab-inbound');
+      if (isUserEditing) return;
+
+      tbody.innerHTML = '';
+      const inboundItems = getInboundRows(rows);
+
+      if (inboundItems.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="17" class="text-center py-8 text-slate-400 font-semibold">입고 작업 데이터가 없습니다.</td></tr>`;
+        return;
+      }
+
+      inboundItems.forEach((item, displayIdx) => {
+        const idx = item.originalIndex;
+        const row = item.data;
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50 transition";
+        tr.setAttribute('data-original-index', idx);
+        
+        const workerList = ["조인효", "윤동현", "이예성", "김찬양"];
+        let workerOptions = `<option value="">선택 안함</option>`;
+        const savedWorker = exportStatusMap[`row_${idx}_worker`] !== undefined ? exportStatusMap[`row_${idx}_worker`] : (row[33] || '');
+        workerList.forEach(w => {
+          const selected = savedWorker === w ? 'selected' : '';
+          workerOptions += `<option value="${w}" ${selected}>${w}</option>`;
+        });
+
+        const p1Data = exportPhotosMap[`row_${idx}_photo_1`];
+        const p2Data = exportPhotosMap[`row_${idx}_photo_2`];
+        let identifier = (row[2] || '입고사진').toString().trim();
+
+        tr.innerHTML = `
+          <td class="py-3 px-3 text-center bg-blue-100/60 border-r font-bold text-sm">${row[0] || (displayIdx + 1)}</td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[1] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs" onchange="updateExportSheetField(this, 2)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[2] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 3)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[3] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 4)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[4] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 5)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[5] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 6)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[6] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 7)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[7] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 8)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[8] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 9)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[11] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 12)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[12] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 13)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[13] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 14)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[14] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 15)"></td>
+          <td class="py-3 px-3 border-r min-w-[140px]"><input type="text" value="${row[15] || ''}" class="w-full text-center bg-slate-50 border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 16)"></td>
+          <td class="py-3 px-3 border-r min-w-[150px]">
+            <select class="export-status-select w-full border bg-white text-slate-700 font-bold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer" onchange="updateExportStatusOrWorker(this, 33, 'status', ${idx})">
+              <option value="NONE" selected>선택 안함</option>
+              <option value="TALLY">TALLY완료</option>
+              <option value="VANNING">작업중</option>
+              <option value="DONE">작업완료</option>
+            </select>
+          </td>
+          <td class="py-3 px-3 border-r min-w-[140px]">
+            <select class="export-worker-select w-full border bg-white text-slate-700 font-bold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer" onchange="updateExportStatusOrWorker(this, 34, 'worker', ${idx})">
+              ${workerOptions}
+            </select>
+          </td>
+          <td class="py-3 px-3 min-w-[210px] text-center">
+            <div class="flex flex-col gap-1.5">
+              <div class="flex items-center gap-1.5 justify-center">
+                <label class="cursor-pointer bg-blue-600 text-white text-xs px-2.5 py-2 rounded font-medium">사진 1<input type="file" accept="image/*" multiple class="hidden" onchange="handleMultiplePhotos(event, 1)"></label>
+                <label class="cursor-pointer bg-indigo-600 text-white text-xs px-2.5 py-2 rounded font-medium">사진 2<input type="file" accept="image/*" multiple class="hidden" onchange="handleMultiplePhotos(event, 2)"></label>
+              </div>
+              <div class="photo-preview-list text-[11px] space-y-0.5">
+                ${p1Data && p1Data.urls && p1Data.urls.length > 0 ? `
+                  <div class="bg-emerald-50 px-2 py-1 rounded border border-emerald-300 font-bold text-emerald-700 flex justify-between items-center">
+                    <span>[사진1] ${p1Data.urls.length}장</span>
+                    <div class="flex gap-1">
+                      <button onclick='showPhotoModal(${JSON.stringify(p1Data.urls)}, "${identifier} - 사진 1")' class="bg-emerald-600 text-white px-1.5 py-0.5 rounded cursor-pointer">보기</button>
+                      <button onclick="deletePhotoData('row_${idx}_photo_1')" class="text-red-500 hover:text-red-700 font-bold px-1" title="사진1 삭제">🗑️</button>
+                    </div>
+                  </div>
+                ` : ''}
+                ${p2Data && p2Data.urls && p2Data.urls.length > 0 ? `
+                  <div class="bg-emerald-50 px-2 py-1 rounded border border-emerald-300 font-bold text-emerald-700 flex justify-between items-center">
+                    <span>[사진2] ${p2Data.urls.length}장</span>
+                    <div class="flex gap-1">
+                      <button onclick='showPhotoModal(${JSON.stringify(p2Data.urls)}, "${identifier} - 사진 2")' class="bg-emerald-600 text-white px-1.5 py-0.5 rounded cursor-pointer">보기</button>
+                      <button onclick="deletePhotoData('row_${idx}_photo_2')" class="text-red-500 hover:text-red-700 font-bold px-1" title="사진2 삭제">🗑️</button>
+                    </div>
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+
+        const addedTr = tbody.lastChild;
+        const selectEl = addedTr.querySelector('.export-status-select');
+        const savedStatus = exportStatusMap[`row_${idx}_status`] !== undefined ? exportStatusMap[`row_${idx}_status`] : (row[32] || 'NONE');
+        if (selectEl) {
+          selectEl.value = savedStatus;
+        }
+      });
+      lucide.createIcons();
     }
 
     const shoringPhoneMap = {
@@ -837,15 +1079,20 @@
       if (isUserEditing) return;
 
       tbody.innerHTML = '';
-      if (rows.length === 0) {
+      const exportItems = getExportRows(rows);
+
+      if (exportItems.length === 0) {
         tbody.innerHTML = `<tr><td colspan="17" class="text-center py-8 text-slate-400 font-semibold">시트에 데이터가 없습니다.</td></tr>`;
         return;
       }
 
-      rows.forEach((row, idx) => {
+      exportItems.forEach((item, displayIdx) => {
+        const idx = item.originalIndex;
+        const row = item.data;
         const shoringVal = (row[12] || '').toString().trim();
         const tr = document.createElement('tr');
         tr.className = "hover:bg-slate-50 transition";
+        tr.setAttribute('data-original-index', idx);
         
         const workerList = ["조인효", "윤동현", "이예성", "김찬양"];
         let exportWorkerOptions = `<option value="">선택 안함</option>`;
@@ -860,7 +1107,7 @@
         let identifier = (row[2] || '사진').toString().trim();
 
         tr.innerHTML = `
-          <td class="py-3 px-3 text-center bg-green-100/60 border-r font-bold text-sm">${row[0] || (idx + 1)}</td>
+          <td class="py-3 px-3 text-center bg-green-100/60 border-r font-bold text-sm">${row[0] || (displayIdx + 1)}</td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[1] || ''}" class="w-full text-center border rounded px-2 py-1.5 text-xs" onchange="updateExportSheetField(this, 2)"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[2] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 3)"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[3] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 4)"></td>
@@ -985,7 +1232,7 @@
       const savedUrl = localStorage.getItem('sheetWebAppUrl');
       if (savedUrl) {
         const activeEl = document.activeElement;
-        const isEditing = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT') && activeEl.closest('#tab-export');
+        const isEditing = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT') && (activeEl.closest('#tab-export') || activeEl.closest('#tab-inbound'));
         
         if (!isEditing) {
           const oldScript = document.getElementById('jsonp-auto-loader');
@@ -1012,15 +1259,18 @@
             }
 
             const newDataString = JSON.stringify(lastSheetRows);
-            const badge = document.getElementById('sync-status-badge');
             
             if (newDataString !== lastRawDataString) {
               lastRawDataString = newDataString;
+              renderInboundTable(lastSheetRows);
               renderExportTable(lastSheetRows);
-              if (badge) {
-                badge.className = "text-xs text-emerald-800 ml-2 bg-emerald-200 px-2.5 py-1 rounded-full font-bold";
-                badge.innerText = "연동 완료 (" + new Date().toLocaleTimeString() + ")";
-              }
+              ['sync-status-badge', 'inbound-sync-status-badge'].forEach(id => {
+                const badge = document.getElementById(id);
+                if (badge) {
+                  badge.className = "text-xs text-emerald-800 ml-2 bg-emerald-200 px-2.5 py-1 rounded-full font-bold";
+                  badge.innerText = "연동 완료 (" + new Date().toLocaleTimeString() + ")";
+                }
+              });
             }
           };
 
