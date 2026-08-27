@@ -42,7 +42,6 @@
         <span id="nav-badge" class="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full font-black">0</span>
       </button>
 
-      <!-- ★ 입고시트 탭 추가 -->
       <button id="nav-inbound-btn" onclick="switchTab('inbound')" class="px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 text-slate-300 hover:text-white hover:bg-slate-700/50 transition">
         <i data-lucide="arrow-down-left" class="w-4 h-4"></i>
         <span>입고시트</span>
@@ -120,7 +119,7 @@
     </div>
   </main>
 
-  <!-- TAB 2 (NEW): Inbound Sheet (입고시트) -->
+  <!-- TAB 2: Inbound Sheet (입고시트) -->
   <main id="tab-inbound" class="max-w-full w-[98%] mx-auto px-4 py-6 space-y-6 hidden export-fit-container">
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
       <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-blue-400/20">
@@ -147,10 +146,11 @@
               <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[90px]">LINE</th>
               <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[80px]">수량</th>
               <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[80px]">중량</th>
-              <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[80px]">CLS</th>
-              <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[100px]">쇼링</th>
+              <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[90px]">운송사</th>
+              <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[90px]">반납지</th>
+              <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[90px]">디텐션</th>
               <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[260px]">비 고</th>
-              <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[150px]">B/K NO.</th>
+              <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[150px]">B/L NO.</th>
               <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[130px]">담당자</th>
               <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[140px]">작업 상태</th>
               <th class="py-3 px-3 text-center border-r border-blue-600 min-w-[140px]">작업자</th>
@@ -159,7 +159,7 @@
           </thead>
           <tbody id="inbound-table-body" class="divide-y divide-slate-200 font-medium text-xs">
             <tr>
-              <td colspan="17" class="text-center py-12 text-slate-400 font-semibold">
+              <td colspan="18" class="text-center py-12 text-slate-400 font-semibold">
                 데이터를 불러오는 중입니다...
               </td>
             </tr>
@@ -875,27 +875,23 @@
       }
     }
 
-    // ★ 스프레드시트 전체 행 데이터에서 '수입작업 (입고)' 구간만 추출하는 함수
+    // ★ 입고 구간 파싱 (수입작업 (입고) ~ 수입작업 (출고) 사이)
     function getInboundRows(rows) {
       let inboundList = [];
       let capture = false;
       for (let i = 0; i < rows.length; i++) {
-        let rowStr = (rows[i][1] || '').toString();
-        // '수입작업 (입고)' 타이틀 셀을 만나면 다음 행부터 캡처 시작
-        if (rowStr.includes('수입작업 (입고)')) {
+        let rowFullStr = rows[i].join(" ");
+        if (rowFullStr.includes('수입작업') && rowFullStr.includes('입고')) {
           capture = true;
           continue;
         }
-        // '수입작업 (출고)' 타이틀 셀을 만나면 캡처 중지
-        if (rowStr.includes('수입작업 (출고)')) {
+        if (rowFullStr.includes('수입작업') && rowFullStr.includes('출고')) {
           capture = false;
         }
         if (capture) {
-          // 실제 데이터 행(NO. 컬럼 등이 존재하거나 빈 행이 아닌 경우)만 필터링
           let noVal = (rows[i][0] || '').toString().trim();
-          let 규격Val = (rows[i][1] || '').toString().trim();
           let cntrVal = (rows[i][2] || '').toString().trim();
-          if (noVal !== "" || 규격Val !== "" || cntrVal !== "") {
+          if (noVal !== "" && !isNaN(noVal)) {
             inboundList.push({ originalIndex: i, data: rows[i] });
           }
         }
@@ -903,26 +899,23 @@
       return inboundList;
     }
 
-    // ★ 스프레드시트 전체 행 데이터에서 '수입작업 (출고)' 구간 이후(또는 지정된 구간) 추출하는 함수 (기존 수출 현황판)
+    // ★ 수출 구간 파싱 (수입작업 (출고) 이후)
     function getExportRows(rows) {
       let exportList = [];
       let capture = false;
       for (let i = 0; i < rows.length; i++) {
-        let rowStr = (rows[i][1] || '').toString();
-        if (rowStr.includes('수입작업 (출고)')) {
+        let rowFullStr = rows[i].join(" ");
+        if (rowFullStr.includes('수입작업') && rowFullStr.includes('출고')) {
           capture = true;
           continue;
         }
         if (capture) {
           let noVal = (rows[i][0] || '').toString().trim();
-          let 규격Val = (rows[i][1] || '').toString().trim();
-          let cntrVal = (rows[i][2] || '').toString().trim();
-          if (noVal !== "" || 규격Val !== "" || cntrVal !== "") {
+          if (noVal !== "" && !isNaN(noVal)) {
             exportList.push({ originalIndex: i, data: rows[i] });
           }
         }
       }
-      // 만약 출고 타이틀을 못 찾았거나 구간 내 데이터가 없다면 기존 방식대로 하단 데이터 활용
       if (exportList.length === 0) {
         for (let i = 0; i < rows.length; i++) {
           let noVal = (rows[i][0] || '').toString().trim();
@@ -934,7 +927,7 @@
       return exportList;
     }
 
-    // ★ 입고시트 테이블 렌더링 함수
+    // ★ 입고시트 렌더링 (입고 스프레드시트 열 순서에 맞춤)
     function renderInboundTable(rows) {
       const tbody = document.getElementById('inbound-table-body');
       if (!tbody) return;
@@ -947,7 +940,7 @@
       const inboundItems = getInboundRows(rows);
 
       if (inboundItems.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="17" class="text-center py-8 text-slate-400 font-semibold">입고 작업 데이터가 없습니다.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="18" class="text-center py-8 text-slate-400 font-semibold">입고 작업 데이터가 없습니다. ('수입작업 (입고)' 타이틀을 확인해주세요)</td></tr>`;
         return;
       }
 
@@ -980,11 +973,12 @@
           <td class="py-3 px-3 border-r"><input type="text" value="${row[6] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 7)"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[7] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 8)"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[8] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 9)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[9] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 10)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[10] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 11)"></td>
           <td class="py-3 px-3 border-r"><input type="text" value="${row[11] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 12)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[12] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 13)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[13] || ''}" class="w-full text-center border rounded px-2 py-1 text-xs" onchange="updateExportSheetField(this, 14)"></td>
-          <td class="py-3 px-3 border-r"><input type="text" value="${row[14] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 15)"></td>
-          <td class="py-3 px-3 border-r min-w-[140px]"><input type="text" value="${row[15] || ''}" class="w-full text-center bg-slate-50 border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 16)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[12] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs" onchange="updateExportSheetField(this, 13)"></td>
+          <td class="py-3 px-3 border-r"><input type="text" value="${row[13] || ''}" class="w-full text-center border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 14)"></td>
+          <td class="py-3 px-3 border-r min-w-[140px]"><input type="text" value="${row[14] || ''}" class="w-full text-center bg-slate-50 border rounded px-2.5 py-1.5 text-xs font-bold" onchange="updateExportSheetField(this, 15)"></td>
           <td class="py-3 px-3 border-r min-w-[150px]">
             <select class="export-status-select w-full border bg-white text-slate-700 font-bold rounded-lg px-2.5 py-2 text-xs outline-none cursor-pointer" onchange="updateExportStatusOrWorker(this, 33, 'status', ${idx})">
               <option value="NONE" selected>선택 안함</option>
