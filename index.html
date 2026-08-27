@@ -364,7 +364,6 @@
     let lastExportRows = [];
     let lastRawDataString = "";
 
-    // 담당자 공통 리스트 (황정환, 민태경, 김지홍 포함)
     const workerList = ["조인효", "윤동현", "이예성", "김찬양", "황정환", "민태경", "김지홍"];
 
     lucide.createIcons();
@@ -652,16 +651,16 @@
       if (files.length === 0) return;
 
       const row = inputEl.closest('tr');
-      const previewList = row.querySelector('.photo-preview-list');
       const webAppUrl = document.getElementById('sheet-url-input').value.trim();
       if (!webAppUrl) { alert("환경설정에서 웹 앱 URL을 먼저 입력해주세요."); inputEl.value = ''; return; }
 
       let identifier = '사진';
-      let cntrInput = row.children[2]?.querySelector('input');
-      if (cntrInput && cntrInput.value) identifier = cntrInput.value.trim();
+      if (row) {
+        let cntrInput = row.children[2]?.querySelector('input');
+        if (cntrInput && cntrInput.value) identifier = cntrInput.value.trim();
+      }
 
-      const tbody = row.parentNode;
-      const rowIndex = Array.from(tbody.children).indexOf(row);
+      const previewList = row ? row.querySelector('.photo-preview-list') : null;
       const loadingBox = document.createElement('div');
       loadingBox.className = `flex items-center gap-1 font-semibold text-amber-700 bg-amber-100 px-2 py-1.5 rounded border border-amber-200 mt-1`;
       loadingBox.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> [사진 ${btnIndex}] ${files.length}장 업로드 중...`;
@@ -690,6 +689,11 @@
 
         const newUploadedUrls = await Promise.all(uploadPromises);
         if (loadingBox) loadingBox.remove();
+
+        let rowIndex = 0;
+        if (row && row.parentNode) {
+          rowIndex = Array.from(row.parentNode.children).indexOf(row);
+        }
 
         const dbKey = `${prefix}_${rowIndex}_photo_${btnIndex}`;
         let existingUrls = (exportPhotosMap[dbKey] && exportPhotosMap[dbKey].urls) ? exportPhotosMap[dbKey].urls : [];
@@ -872,7 +876,6 @@
       }
     }
 
-    // --- 수입 현황판 렌더링 함수 ---
     function renderImportTable(rows) {
       const tbody = document.getElementById('import-table-body');
       if (!tbody) return;
@@ -984,7 +987,6 @@
       lucide.createIcons();
     }
 
-    // --- 수출 현황판 렌더링 함수 ---
     const shoringPhoneMap = {
       "SH": "010-8377-8779",
       "로케트": "051-442-0058",
@@ -1042,7 +1044,6 @@
           exportWorkerOptions += `<option value="${w}" ${selected}>${w}</option>`;
         });
 
-        // CLS 날짜 형식 변환 적용 (형식 통일: 8/28 등)
         const clsFormatted = formatDateString(row[11]);
         const savedSiteIssue = exportStatusMap[`row_${idx}_siteIssue`] !== undefined ? exportStatusMap[`row_${idx}_siteIssue`] : '';
         const p1Data = exportPhotosMap[`row_${idx}_photo_1`];
