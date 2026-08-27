@@ -561,7 +561,7 @@
       lucide.createIcons();
     }
 
-    // 모바일 수입 현황판 렌더링 (병합 행 및 세부 정보 완벽 반영)
+    // 모바일 수입 현황판 렌더링 (현장특이사항 입력 칸 추가)
     function renderMobileImportCards(rows) {
       const container = document.getElementById('mobile-import-container');
       if (!container) return;
@@ -592,6 +592,7 @@
         const workerList = ["조인효", "윤동현", "이예성", "김찬양"];
         const savedWorker = exportStatusMap[`import_${idx}_worker`] !== undefined ? exportStatusMap[`import_${idx}_worker`] : '';
         const savedStatus = exportStatusMap[`import_${idx}_status`] !== undefined ? exportStatusMap[`import_${idx}_status`] : 'NONE';
+        const savedSiteIssue = exportStatusMap[`import_${idx}_siteIssue`] !== undefined ? exportStatusMap[`import_${idx}_siteIssue`] : '';
 
         let workerOptions = `<option value="">작업자 선택</option>`;
         workerList.forEach(w => {
@@ -601,7 +602,6 @@
         const p1Data = exportPhotosMap[`import_${idx}_photo_1`];
         const p2Data = exportPhotosMap[`import_${idx}_photo_2`];
 
-        // 병합 특수 행 감지 (세방전지 입고 등)
         const isMergedSpecialRow = (!cntr && !spec && (shipper || note));
 
         const card = document.createElement('div');
@@ -643,6 +643,11 @@
               <div class="bg-slate-50 p-2 rounded-xl border border-slate-100"><span class="text-slate-400 block text-[10px]">비고</span><span class="font-bold text-slate-800 truncate block">${note || '-'}</span></div>
             </div>
 
+            <div class="bg-slate-50 p-2 rounded-xl border border-slate-100 text-xs">
+              <span class="text-slate-400 block text-[10px] mb-0.5">현장특이사항</span>
+              <input type="text" value="${savedSiteIssue}" onchange="updateExportStatusOrWorker(this, 35, 'siteIssue', ${idx}, 'import')" placeholder="현장 특이사항을 입력하세요" class="w-full bg-white border rounded px-2 py-1 text-xs font-medium">
+            </div>
+
             <div class="grid grid-cols-2 gap-2 pt-1">
               <select onchange="updateExportStatusOrWorker(this, 33, 'status', ${idx}, 'import')" class="w-full border border-slate-200 bg-white font-bold rounded-lg px-3 py-2 text-xs outline-none">
                 <option value="NONE" ${savedStatus === 'NONE' ? 'selected' : ''}>상태: 선택 안함</option>
@@ -675,6 +680,7 @@
       lucide.createIcons();
     }
 
+    // 모바일 수출 현황판 렌더링 (현장특이사항 입력 칸 추가)
     function renderMobileExportCards(rows) {
       const container = document.getElementById('mobile-export-container');
       if (!container) return;
@@ -708,6 +714,7 @@
         const workerList = ["조인효", "윤동현", "이예성", "김찬양"];
         const savedWorker = exportStatusMap[`row_${idx}_worker`] !== undefined ? exportStatusMap[`row_${idx}_worker`] : (row[34] || '');
         const savedStatus = exportStatusMap[`row_${idx}_status`] !== undefined ? exportStatusMap[`row_${idx}_status`] : (row[33] || 'NONE');
+        const savedSiteIssue = exportStatusMap[`row_${idx}_siteIssue`] !== undefined ? exportStatusMap[`row_${idx}_siteIssue`] : '';
 
         let workerOptions = `<option value="">작업자 선택</option>`;
         workerList.forEach(w => {
@@ -749,6 +756,11 @@
             <div class="bg-slate-50 p-2 rounded-xl border border-slate-100"><span class="text-slate-400 block text-[10px]">SEAL NO.</span><span class="font-bold text-slate-800">${seal}</span></div>
             <div class="bg-slate-50 p-2 rounded-xl border border-slate-100"><span class="text-slate-400 block text-[10px]">쇼링 / B/K</span><span class="font-bold text-slate-800">${shoring} / ${bkNo}</span></div>
             <div class="bg-slate-50 p-2 rounded-xl border border-slate-100"><span class="text-slate-400 block text-[10px]">비고</span><span class="font-bold text-slate-800 truncate block">${note}</span></div>
+          </div>
+
+          <div class="bg-slate-50 p-2 rounded-xl border border-slate-100 text-xs">
+            <span class="text-slate-400 block text-[10px] mb-0.5">현장특이사항</span>
+            <input type="text" value="${savedSiteIssue}" onchange="updateExportStatusOrWorker(this, 35, 'siteIssue', ${idx}, 'export')" placeholder="현장 특이사항을 입력하세요" class="w-full bg-white border rounded px-2 py-1 text-xs font-medium">
           </div>
 
           ${shoringDisplayHtml}
