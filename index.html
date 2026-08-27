@@ -363,6 +363,7 @@
     let lastImportRows = [];
     let lastExportRows = [];
     let lastRawDataString = "";
+    let isUploadingPhoto = false; // 사진 업로드 중 동기화 차단 플래그
 
     const workerList = ["조인효", "윤동현", "이예성", "김찬양", "황정환", "민태경", "김지홍"];
 
@@ -488,6 +489,8 @@
       const webAppUrl = document.getElementById('sheet-url-input').value.trim();
       if (!webAppUrl) { alert("환경설정에서 웹 앱 URL을 먼저 입력해주세요."); inputEl.value = ''; return; }
 
+      isUploadingPhoto = true; // 업로드 중 동기화 차단
+
       try {
         const uploadPromises = files.map(async (file, i) => {
           const fileName = `Dash_${identifier}_${Date.now()}_${i + 1}_${file.name}`;
@@ -513,6 +516,8 @@
         await exportPhotosRef.child(dbKey).set({ urls: combinedUrls, identifier: identifier });
       } catch (error) {
         alert("업로드 실패: " + error.message);
+      } finally {
+        isUploadingPhoto = false; // 업로드 완료 후 동기화 재개
       }
       inputEl.value = '';
     }
@@ -654,6 +659,8 @@
       const webAppUrl = document.getElementById('sheet-url-input').value.trim();
       if (!webAppUrl) { alert("환경설정에서 웹 앱 URL을 먼저 입력해주세요."); inputEl.value = ''; return; }
 
+      isUploadingPhoto = true; // 업로드 중 동기화 차단
+
       let identifier = '사진';
       if (row) {
         let cntrInput = row.children[2]?.querySelector('input');
@@ -708,6 +715,8 @@
         console.error("업로드 실패:", error);
         if (loadingBox) loadingBox.remove();
         alert("업로드 실패: " + error.message);
+      } finally {
+        isUploadingPhoto = false; // 업로드 완료 후 동기화 재개
       }
 
       inputEl.value = '';
@@ -1179,7 +1188,8 @@
         const activeEl = document.activeElement;
         const isEditing = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT') && (activeEl.closest('#tab-export') || activeEl.closest('#tab-import'));
         
-        if (!isEditing) {
+        // 편집 중이거나 사진 업로드 중일 때는 자동 동기화를 건너뜁니다.
+        if (!isEditing && !isUploadingPhoto) {
           const oldScript = document.getElementById('jsonp-auto-loader');
           if (oldScript) oldScript.remove();
 
