@@ -1,1 +1,95 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>경일글로벌 - 차량 순번 조회</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+</head>
+<body class="bg-slate-100 flex items-center justify-center min-h-screen p-4">
 
+  <div class="bg-white p-6 rounded-2xl shadow-lg w-full max-w-md">
+    <h1 class="text-xl font-bold text-slate-800 mb-1">차량 대기 순번 조회</h1>
+    <p class="text-sm text-slate-500 mb-6">차량번호 뒤 4자리 또는 전체를 입력하세요.</p>
+
+    <div class="flex gap-2 mb-6">
+      <input type="text" id="carInput" placeholder="예: 3440 또는 부산96아3440" 
+             class="flex-1 border rounded-lg px-4 py-2 text-sm focus:outline-blue-500">
+      <button onclick="searchQueue()" class="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">조회</button>
+    </div>
+
+    <!-- 결과 영역 -->
+    <div id="resultBox" class="hidden border-t pt-4 space-y-3">
+      <div class="flex justify-between items-center">
+        <span class="text-gray-500 text-sm">차량번호</span>
+        <span id="resCarNum" class="font-bold text-slate-800"></span>
+      </div>
+      <div class="flex justify-between items-center">
+        <span class="text-gray-500 text-sm">작업 구분</span>
+        <span id="resType" class="font-semibold text-blue-600"></span>
+      </div>
+      <div class="flex justify-between items-center">
+        <span class="text-gray-500 text-sm">현재 대기 순번</span>
+        <span id="resRank" class="text-2xl font-extrabold text-orange-500"></span>
+      </div>
+      <div class="flex justify-between items-center">
+        <span class="text-gray-500 text-sm">진행 상태</span>
+        <span id="resStatus" class="px-2 py-1 bg-gray-100 text-xs rounded font-medium text-slate-700"></span>
+      </div>
+    </div>
+    
+    <div id="emptyBox" class="hidden text-center text-sm text-red-500 py-4">
+      대기 중인 차량 정보를 찾을 수 없습니다.
+    </div>
+  </div>
+
+  <script>
+    // 1. 기존 프로젝트의 Firebase 설정을 그대로 입력
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      projectId: "YOUR_PROJECT_ID",
+      // ... 기존 설정값
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    async function searchQueue() {
+      const keyword = document.getElementById('carInput').value.trim();
+      const resultBox = document.getElementById('resultBox');
+      const emptyBox = document.getElementById('emptyBox');
+      
+      if (!keyword) return alert('차량번호를 입력해주세요.');
+
+      // 2. 대기/접수완료 리스트 불러오기 (접수시간 순 정렬)
+      const snapshot = await db.collection("orders") // 실제 사용하는 컬렉션명으로 변경
+        .where("status", "in", ["접수완료", "대기중"])
+        .orderBy("timestamp", "asc")
+        .get();
+
+      let queueList = [];
+      snapshot.forEach(doc => queueList.push({ id: doc.id, ...doc.data() }));
+
+      // 3. 입력된 번호와 매칭 및 순번 계산
+      const matchIndex = queueList.findIndex(item => item.carNumber.includes(keyword));
+
+      if (matchIndex !== -1) {
+        const item = queueList[matchIndex];
+        document.getElementById('resCarNum').innerText = item.carNumber;
+        document.getElementById('resType').innerText = item.type; // 상차/하차
+        document.getElementById('resRank').innerText = `${matchIndex + 1}번째 대기 중`;
+        document.getElementById('resStatus').innerText = item.status;
+        
+        resultBox.classList.remove('hidden');
+        emptyBox.classList.add('hidden');
+      } else {
+        resultBox.classList.add('hidden');
+        emptyBox.classList.remove('hidden');
+      }
+    }
+  </script>
+</body>
+</html>
