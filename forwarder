@@ -2,93 +2,306 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>경일글로벌 - 차량 순번 조회</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>경일글로벌 - 포워더/운송사 차량 대기현황 조회</title>
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+      background-color: #f1f5f9;
+    }
+  </style>
 </head>
-<body class="bg-slate-100 flex items-center justify-center min-h-screen p-4">
+<body class="min-h-screen bg-slate-100 flex flex-col justify-between text-slate-800">
 
-  <div class="bg-white p-6 rounded-2xl shadow-lg w-full max-w-md">
-    <h1 class="text-xl font-bold text-slate-800 mb-1">차량 대기 순번 조회</h1>
-    <p class="text-sm text-slate-500 mb-6">차량번호 뒤 4자리 또는 전체를 입력하세요.</p>
-
-    <div class="flex gap-2 mb-6">
-      <input type="text" id="carInput" placeholder="예: 3440 또는 부산96아3440" 
-             class="flex-1 border rounded-lg px-4 py-2 text-sm focus:outline-blue-500">
-      <button onclick="searchQueue()" class="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">조회</button>
-    </div>
-
-    <!-- 결과 영역 -->
-    <div id="resultBox" class="hidden border-t pt-4 space-y-3">
-      <div class="flex justify-between items-center">
-        <span class="text-gray-500 text-sm">차량번호</span>
-        <span id="resCarNum" class="font-bold text-slate-800"></span>
+  <!-- 상단 네비게이션 헤더 -->
+  <header class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center shadow-md sticky top-0 z-40">
+    <div class="flex items-center gap-3">
+      <div class="bg-blue-600 text-white p-2 rounded-xl flex items-center justify-center shadow-inner">
+        <i data-lucide="truck" class="w-5 h-5"></i>
       </div>
-      <div class="flex justify-between items-center">
-        <span class="text-gray-500 text-sm">작업 구분</span>
-        <span id="resType" class="font-semibold text-blue-600"></span>
-      </div>
-      <div class="flex justify-between items-center">
-        <span class="text-gray-500 text-sm">현재 대기 순번</span>
-        <span id="resRank" class="text-2xl font-extrabold text-orange-500"></span>
-      </div>
-      <div class="flex justify-between items-center">
-        <span class="text-gray-500 text-sm">진행 상태</span>
-        <span id="resStatus" class="px-2 py-1 bg-gray-100 text-xs rounded font-medium text-slate-700"></span>
+      <div>
+        <h1 class="text-lg font-black tracking-tight flex items-center gap-2">
+          경일글로벌 <span class="text-blue-400 text-xs font-semibold bg-blue-950 px-2 py-0.5 rounded-full border border-blue-800">포워더·운송사용</span>
+        </h1>
+        <p class="text-[11px] text-slate-400">실시간 CFS 입출고 대기현황 조회</p>
       </div>
     </div>
+    <div class="flex items-center gap-2">
+      <div id="live-indicator" class="flex items-center gap-1.5 text-xs font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 px-2.5 py-1 rounded-full">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span>실시간 연동중</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- 메인 컨텐츠 영역 -->
+  <main class="flex-1 max-w-lg w-full mx-auto p-4 sm:p-6 flex flex-col justify-center">
     
-    <div id="emptyBox" class="hidden text-center text-sm text-red-500 py-4">
-      대기 중인 차량 정보를 찾을 수 없습니다.
+    <!-- 검색 카드 -->
+    <div class="bg-white rounded-3xl shadow-xl border border-slate-200/80 p-6 sm:p-7 space-y-6">
+      
+      <div>
+        <h2 class="text-xl font-black text-slate-900 tracking-tight">차량 대기현황 조회</h2>
+        <p class="text-xs text-slate-500 mt-1">차량번호 전체 또는 뒤 4자리를 입력해주세요.</p>
+      </div>
+
+      <!-- 검색창 -->
+      <form onsubmit="handleSearch(event)" class="space-y-3">
+        <div class="relative">
+          <input 
+            type="text" 
+            id="search-input" 
+            placeholder="예: 부산96아3440 또는 3440" 
+            required
+            class="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl pl-11 pr-4 py-3.5 text-base font-bold text-slate-900 outline-none focus:border-blue-600 focus:bg-white transition"
+          />
+          <i data-lucide="search" class="w-5 h-5 absolute left-4 top-4 text-slate-400"></i>
+        </div>
+        <button 
+          type="submit" 
+          class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3.5 rounded-2xl shadow-lg shadow-blue-500/30 transition flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]">
+          <i data-lucide="search-check" class="w-5 h-5"></i>
+          <span>대기 현황 확인하기</span>
+        </button>
+      </form>
+
+      <!-- 초기 가이드 화면 -->
+      <div id="section-initial" class="text-center py-6 text-slate-400 space-y-2">
+        <div class="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-400">
+          <i data-lucide="clock" class="w-6 h-6"></i>
+        </div>
+        <p class="text-xs font-semibold leading-relaxed">
+          배차된 차량번호를 검색하시면<br>
+          <span class="text-slate-600 font-bold">앞선 대기 차량 수</span>와 <span class="text-slate-600 font-bold">접수 시간</span>을 바로 확인하실 수 있습니다.
+        </p>
+      </div>
+
+      <!-- 검색 결과 카드 (기본 숨김) -->
+      <div id="section-result" class="hidden space-y-5 animate-in fade-in duration-300">
+        
+        <!-- 대기 상태 핵심 배너 -->
+        <div id="status-banner" class="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-5 text-center shadow-sm">
+          <p id="badge-ahead-title" class="text-xs font-extrabold text-amber-700 uppercase tracking-wider mb-1">현재 앞에 대기중인 차량</p>
+          <div class="flex items-baseline justify-center gap-1">
+            <span id="ahead-count" class="text-5xl font-black text-amber-600 tracking-tight">0</span>
+            <span class="text-xl font-black text-amber-800">대</span>
+          </div>
+          <p id="queue-desc-text" class="text-xs font-bold text-amber-800 mt-2 bg-amber-100/80 inline-block px-3 py-1 rounded-full">
+            현재 1번째 순번입니다.
+          </p>
+        </div>
+
+        <!-- 상세 내역 테이블 -->
+        <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200/70 space-y-3 text-sm">
+          <div class="flex justify-between items-center py-1.5 border-b border-slate-200">
+            <span class="text-slate-500 font-medium">차량번호</span>
+            <span id="res-car-number" class="font-black text-slate-900 text-base"></span>
+          </div>
+          <div class="flex justify-between items-center py-1.5 border-b border-slate-200">
+            <span class="text-slate-500 font-medium">작업구분</span>
+            <span id="res-work-type" class="font-black px-2.5 py-0.5 rounded-md text-xs"></span>
+          </div>
+          <div class="flex justify-between items-center py-1.5 border-b border-slate-200">
+            <span class="text-slate-500 font-medium">화주명</span>
+            <span id="res-client-name" class="font-bold text-slate-800"></span>
+          </div>
+          <div class="flex justify-between items-center py-1.5 border-b border-slate-200">
+            <span class="text-slate-500 font-medium">수량</span>
+            <span id="res-quantity" class="font-bold text-blue-600"></span>
+          </div>
+          <div class="flex justify-between items-center py-1.5 border-b border-slate-200">
+            <span class="text-slate-500 font-medium">접수시간</span>
+            <span id="res-time-str" class="font-bold text-slate-700"></span>
+          </div>
+          <div class="flex justify-between items-center py-1.5">
+            <span class="text-slate-500 font-medium">진행상태</span>
+            <span id="res-status" class="px-2.5 py-1 rounded-lg text-xs font-black"></span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 검색 결과 없음 카드 (기본 숨김) -->
+      <div id="section-empty" class="hidden text-center py-8 bg-rose-50 rounded-2xl border border-rose-100 space-y-2">
+        <div class="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center mx-auto text-rose-500">
+          <i data-lucide="alert-circle" class="w-6 h-6"></i>
+        </div>
+        <p class="font-black text-rose-700 text-sm">일치하는 차량 정보를 찾을 수 없습니다.</p>
+        <p class="text-xs text-slate-500 leading-relaxed">
+          차량번호를 다시 확인해주시거나,<br>현장 키오스크에서 접수가 완료되었는지 확인바랍니다.
+        </p>
+      </div>
+
     </div>
-  </div>
+
+  </main>
+
+  <!-- 푸터 -->
+  <footer class="text-center py-4 text-xs font-medium text-slate-400">
+    © KYUNGIL GLOBAL Integrated Logistics Management System
+  </footer>
+
+  <!-- Firebase v9 호환 라이브러리 -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
   <script>
-    // 1. 기존 프로젝트의 Firebase 설정을 그대로 입력
+    // -------------------------------------------------------------
+    // 오퍼레이터 대시보드와 동일한 Firebase 연동 설정
+    // -------------------------------------------------------------
     const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_AUTH_DOMAIN",
-      projectId: "YOUR_PROJECT_ID",
-      // ... 기존 설정값
+      apiKey: "AIzaSyDgXG4dVextcvKD2vwsa11Y7zXPp8rbI08",
+      authDomain: "kiglsystem.firebaseapp.com",
+      databaseURL: "https://kiglsystem-default-rtdb.firebaseio.com",
+      projectId: "kiglsystem",
+      storageBucket: "kiglsystem.firebasestorage.app",
+      messagingSenderId: "782535308238",
+      appId: "1:782535308238:web:afab46d543d96648eb319f",
+      measurementId: "G-TTV99051J8"
     };
+
     firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    const database = firebase.database();
+    const dashboardRef = database.ref('dashboard_items');
 
-    async function searchQueue() {
-      const keyword = document.getElementById('carInput').value.trim();
-      const resultBox = document.getElementById('resultBox');
-      const emptyBox = document.getElementById('emptyBox');
+    let currentDashboardData = {};
+    let lastSearchedKeyword = "";
+
+    lucide.createIcons();
+
+    // 실시간 Firebase 데이터 변경 감지
+    dashboardRef.on('value', (snapshot) => {
+      currentDashboardData = snapshot.val() || {};
       
-      if (!keyword) return alert('차량번호를 입력해주세요.');
-
-      // 2. 대기/접수완료 리스트 불러오기 (접수시간 순 정렬)
-      const snapshot = await db.collection("orders") // 실제 사용하는 컬렉션명으로 변경
-        .where("status", "in", ["접수완료", "대기중"])
-        .orderBy("timestamp", "asc")
-        .get();
-
-      let queueList = [];
-      snapshot.forEach(doc => queueList.push({ id: doc.id, ...doc.data() }));
-
-      // 3. 입력된 번호와 매칭 및 순번 계산
-      const matchIndex = queueList.findIndex(item => item.carNumber.includes(keyword));
-
-      if (matchIndex !== -1) {
-        const item = queueList[matchIndex];
-        document.getElementById('resCarNum').innerText = item.carNumber;
-        document.getElementById('resType').innerText = item.type; // 상차/하차
-        document.getElementById('resRank').innerText = `${matchIndex + 1}번째 대기 중`;
-        document.getElementById('resStatus').innerText = item.status;
-        
-        resultBox.classList.remove('hidden');
-        emptyBox.classList.add('hidden');
-      } else {
-        resultBox.classList.add('hidden');
-        emptyBox.classList.remove('hidden');
+      // 이미 검색 중인 번호가 있다면 실시간으로 순번 자동 업데이트
+      if (lastSearchedKeyword) {
+        renderSearchResult(lastSearchedKeyword);
       }
+    });
+
+    // 검색 핸들러
+    function handleSearch(e) {
+      if (e) e.preventDefault();
+      const inputEl = document.getElementById('search-input');
+      const keyword = inputEl.value.replace(/\s+/g, '').trim();
+
+      if (!keyword) {
+        alert("차량번호를 입력해주세요.");
+        return;
+      }
+
+      lastSearchedKeyword = keyword;
+      renderSearchResult(keyword);
+    }
+
+    // 순번 계산 및 화면 렌더링 로직
+    function renderSearchResult(keyword) {
+      const initialSec = document.getElementById('section-initial');
+      const resultSec = document.getElementById('section-result');
+      const emptySec = document.getElementById('section-empty');
+
+      initialSec.classList.add('hidden');
+
+      // Firebase 데이터를 시간순(오래된 순) 정렬된 배열로 변환
+      // Firebase push key는 시간 순서대로 정렬됩니다.
+      const entries = Object.entries(currentDashboardData).map(([key, value]) => ({
+        key,
+        ...value
+      }));
+
+      // 접수 완료(WAITING) 상태의 대기열 필터링
+      const waitingList = entries.filter(item => item.status === 'WAITING');
+
+      // 입력한 차량번호와 매칭되는 대상 찾기 (전체 데이터 대상)
+      const matchedItem = entries.find(item => {
+        const carNo = (item.carNumber || '').replace(/\s+/g, '');
+        return carNo.includes(keyword);
+      });
+
+      if (!matchedItem) {
+        resultSec.classList.add('hidden');
+        emptySec.classList.remove('hidden');
+        lucide.createIcons();
+        return;
+      }
+
+      emptySec.classList.add('hidden');
+      resultSec.classList.remove('hidden');
+
+      // 1. 차량 정보 기본 출력
+      document.getElementById('res-car-number').innerText = matchedItem.carNumber || '-';
+      document.getElementById('res-client-name').innerText = matchedItem.clientName || '-';
+      document.getElementById('res-quantity').innerText = `${matchedItem.quantity || 0} 개`;
+      document.getElementById('res-time-str').innerText = matchedItem.timeStr || '-';
+
+      // 2. 구분 (상차/하차) 스타일링
+      const workTypeEl = document.getElementById('res-work-type');
+      const isUp = (matchedItem.workType || '').includes('상차');
+      workTypeEl.innerText = matchedItem.workType || '하차(입고)';
+      workTypeEl.className = isUp 
+        ? 'font-black px-2.5 py-0.5 rounded-md text-xs bg-amber-100 text-amber-800' 
+        : 'font-black px-2.5 py-0.5 rounded-md text-xs bg-blue-100 text-blue-800';
+
+      // 3. 상태 뱃지 및 앞 대기 차량수 계산
+      const statusEl = document.getElementById('res-status');
+      const banner = document.getElementById('status-banner');
+      const aheadTitle = document.getElementById('badge-ahead-title');
+      const aheadCountEl = document.getElementById('ahead-count');
+      const descText = document.getElementById('queue-desc-text');
+
+      if (matchedItem.status === 'WAITING') {
+        statusEl.innerText = '대기중 (접수완료)';
+        statusEl.className = 'px-2.5 py-1 rounded-lg text-xs font-black bg-amber-100 text-amber-800';
+
+        // 대기 목록에서 이 차량의 인덱스 찾기
+        const queueIndex = waitingList.findIndex(item => item.key === matchedItem.key);
+        const aheadCars = queueIndex !== -1 ? queueIndex : 0;
+        const currentRank = aheadCars + 1;
+
+        banner.className = "bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-5 text-center shadow-sm";
+        aheadTitle.className = "text-xs font-extrabold text-amber-700 uppercase tracking-wider mb-1";
+        aheadTitle.innerText = "현재 앞에 대기중인 차량";
+        aheadCountEl.className = "text-5xl font-black text-amber-600 tracking-tight";
+        aheadCountEl.innerText = aheadCars;
+
+        descText.className = "text-xs font-bold text-amber-800 mt-2 bg-amber-100/80 inline-block px-3 py-1 rounded-full";
+        if (aheadCars === 0) {
+          descText.innerText = "현재 1번째 순번입니다. (곧 작업이 시작됩니다)";
+        } else {
+          descText.innerText = `현재 대기 ${currentRank}번째 순번입니다.`;
+        }
+
+      } else if (matchedItem.status === 'IN_PROGRESS') {
+        statusEl.innerText = '작업 진행 중';
+        statusEl.className = 'px-2.5 py-1 rounded-lg text-xs font-black bg-blue-100 text-blue-800';
+
+        banner.className = "bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-5 text-center shadow-sm";
+        aheadTitle.className = "text-xs font-extrabold text-blue-700 uppercase tracking-wider mb-1";
+        aheadTitle.innerText = "현재 작업 상태";
+        aheadCountEl.className = "text-3xl font-black text-blue-600 tracking-tight py-1";
+        aheadCountEl.innerText = "현장 작업중";
+        descText.className = "text-xs font-bold text-blue-800 mt-2 bg-blue-100/80 inline-block px-3 py-1 rounded-full";
+        descText.innerText = matchedItem.worker ? `작업자: ${matchedItem.worker}` : "상/하차 작업이 진행되고 있습니다.";
+
+      } else if (matchedItem.status === 'COMPLETED') {
+        statusEl.innerText = '작업 완료';
+        statusEl.className = 'px-2.5 py-1 rounded-lg text-xs font-black bg-emerald-100 text-emerald-800';
+
+        banner.className = "bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl p-5 text-center shadow-sm";
+        aheadTitle.className = "text-xs font-extrabold text-emerald-700 uppercase tracking-wider mb-1";
+        aheadTitle.innerText = "현재 작업 상태";
+        aheadCountEl.className = "text-3xl font-black text-emerald-600 tracking-tight py-1";
+        aheadCountEl.innerText = "출차 가능";
+        descText.className = "text-xs font-bold text-emerald-800 mt-2 bg-emerald-100/80 inline-block px-3 py-1 rounded-full";
+        descText.innerText = "작업이 모두 완료되었습니다. 안녕히 가십시오.";
+      }
+
+      lucide.createIcons();
     }
   </script>
 </body>
