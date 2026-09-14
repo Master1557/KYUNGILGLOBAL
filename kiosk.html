@@ -381,17 +381,25 @@
       }
     }
 
-    // ★ Make 웹훅을 통해 카카오톡 오픈채팅방(단톡방)으로 알림을 전송하는 함수 추가
+    // ★ 솔라피 템플릿(KA01TP260908004548697qkoomteICAX) 변수 치환 규격 완벽 대응 웹훅 함수
     function sendMakeWebhookAlert(clientName, carNumber, workType, quantity, phoneNumber, note) {
       const webhookUrl = 'https://hook.eu1.make.com/awnbitgj4j87x37j6ld3iwskva4shco3';
 
       const payload = {
+        templateId: "KA01TP260908004548697qkoomteICAX",
         workType: workType,
         clientName: clientName,
         carNumber: carNumber,
         phoneNumber: phoneNumber,
-        quantity: quantity,
-        note: note || '-'
+        quantity: String(quantity),
+        note: note || '-',
+        // 솔라피가 요구하는 #{변수명} 객체 형태 (Make에서 그대로 전달 가능)
+        variables: {
+          "#{clientName}": String(clientName),
+          "#{carNumber}": String(carNumber),
+          "#{phoneNumber}": String(phoneNumber),
+          "#{quantity}": String(quantity)
+        }
       };
 
       fetch(webhookUrl, {
@@ -486,7 +494,7 @@
           timestamp: firebase.database.ServerValue.TIMESTAMP
         });
 
-        // ★ Firebase 저장 성공 시 Make 웹훅(카카오톡 오픈채팅방 연동용) 전송 실행
+        // 웹훅 알림 전송 (치환 변수 포함)
         sendMakeWebhookAlert(clientName, carNumber, workType, quantityNumber, phoneNumber, note);
 
         document.getElementById('modal-queue-order-number').innerText =
