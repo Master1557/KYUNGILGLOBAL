@@ -25,6 +25,15 @@
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800 pb-16">
 
+  <!-- 글로벌 전역 업로드 로딩 오버레이 (여러 사람이 동시에 올릴 때 현재 내 화면 차단 및 상태 안내) -->
+  <div id="global-upload-overlay" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm hidden flex flex-col items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-3xl p-6 text-center space-y-3 shadow-2xl max-w-xs w-full">
+      <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+      <h3 class="font-black text-slate-900 text-base" id="upload-overlay-title">사진 업로드 중...</h3>
+      <p class="text-xs text-slate-500 font-medium" id="upload-overlay-desc">서버로 사진을 전송하고 있습니다. 잠시만 기다려주세요.</p>
+    </div>
+  </div>
+
   <!-- 알림 권한 요청 및 안내 배너 (최초 접속 시 표시) -->
   <div id="notification-permission-banner" class="bg-blue-600 text-white px-4 py-2.5 text-xs font-bold text-center flex justify-between items-center shadow-inner hidden">
     <span>🔔 현장 알림 및 진동을 받으려면 알림 권한을 허용해주세요!</span>
@@ -205,7 +214,7 @@
     let lastSheetRows = [];
     let lastRawDataString = "";
     let isInitialDashboardLoad = true;
-    let isUploadingPhoto = false; // 사진 업로드 중 동기화 차단 플래그
+    let isUploadingPhoto = false;
 
     const workerList = ["조인효", "윤동현", "이예성", "김찬양", "황정환", "민태경", "김지홍"];
 
@@ -325,12 +334,10 @@
       renderMobileDashboard(dashboardMap);
     }
 
-    // 컴퓨터 사이트와 키 규칙(import_idx_field, row_idx_field)을 완벽하게 통일
     async function updateExportStatusOrWorker(element, colIndex, fieldName, rowIndex, prefix = 'row') {
       const webAppUrl = document.getElementById('sheet-url-input').value.trim();
       const value = element.value;
       
-      // 파이어베이스 저장 경로를 컴퓨터 사이트와 정확히 일치시킴
       exportStatusRef.child(`${prefix}_${rowIndex}_${fieldName}`).set(value);
 
       if (webAppUrl) {
@@ -413,6 +420,7 @@
       });
     }
 
+    // [개선] 다중 사용자 동시 업로드 대응 및 오버레이 로딩 안내 적용
     async function handleMobilePhotoUpload(event, btnIndex, rowKeyOrIdx, identifier, prefix = 'row') {
       const inputEl = event.target;
       const files = Array.from(inputEl.files);
@@ -421,18 +429,20 @@
       const webAppUrl = document.getElementById('sheet-url-input').value.trim();
       if (!webAppUrl) { alert("환경설정에서 웹 앱 URL을 먼저 입력해주세요."); inputEl.value = ''; return; }
 
-      isUploadingPhoto = true; // 업로드 중 자동 동기화 차단
+      isUploadingPhoto = true; // 업로드 중 자동 동기화 잠금
 
-      const card = inputEl.closest('.bg-white');
-      let loadingBox = null;
-      if (card) {
-        loadingBox = document.createElement('div');
-        loadingBox.className = "flex items-center gap-1.5 font-bold text-amber-800 bg-amber-100 px-3 py-2 rounded-xl border border-amber-300 text-xs mt-2";
-        loadingBox.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span> [사진 ${btnIndex}] ${files.length}장 업로드 중...`;
-        card.appendChild(loadingBox);
+      // 글로벌 업로드 로딩창 표시
+      const overlay = document.getElementById('global-upload-overlay');
+      const overlayTitle = document.getElementById('upload-overlay-title');
+      const overlayDesc = document.getElementById('upload-overlay-desc');
+      if (overlay) {
+        overlayTitle.innerText = `[사진 ${btnIndex}] ${files.length}장 업로드 중...`;
+        overlayDesc.innerText = `대상: ${identifier}\n여러 작업자가 동시에 처리 중입니다. 잠시만 기다려주세요.`;
+        overlay.classList.remove('hidden');
       }
 
       try {
+        // 병렬 업로드로 처리 속도 향상 및 오류 방지
         const uploadPromises = files.map(async (file, i) => {
           const fileName = `${prefix}_${identifier}_${Date.now()}_${i + 1}_${file.name}`;
           const base64Data = await resizeImage(file, 900, 0.6);
@@ -450,20 +460,26 @@
         });
 
         const newUploadedUrls = await Promise.all(uploadPromises);
-        if (loadingBox) loadingBox.remove();
 
+        // Firebase에 안전하게 데이터 합산 저장
         const dbKey = `${prefix}_${rowKeyOrIdx}_photo_${btnIndex}`;
-        let existingUrls = (exportPhotosMap[dbKey] && exportPhotosMap[dbKey].urls) ? exportPhotosMap[dbKey].urls : [];
+        const snapshot = await exportPhotosRef.child(dbKey).once('value');
+        const currentData = snapshot.val() || {};
+        let existingUrls = Array.isArray(currentData.urls) ? currentData.urls : [];
         let combinedUrls = existingUrls.concat(newUploadedUrls);
 
         await exportPhotosRef.child(dbKey).set({ urls: combinedUrls, identifier: identifier });
+        
+        if (overlay) overlay.classList.add('hidden');
+        alert(`사진 ${newUploadedUrls.length}장이 성공적으로 업로드되었습니다!`);
+
       } catch (error) {
-        if (loadingBox) loadingBox.remove();
+        if (overlay) overlay.classList.add('hidden');
         alert("업로드 실패: " + error.message);
       } finally {
-        isUploadingPhoto = false; // 업로드 완료 후 동기화 재개
+        isUploadingPhoto = false; // 업로드 해제
+        inputEl.value = '';
       }
-      inputEl.value = '';
     }
 
     function renderMobileDashboard(data) {
@@ -574,7 +590,6 @@
       lucide.createIcons();
     }
 
-    // 모바일 수입 현황판 렌더링 (편집 중 리렌더링 방지 적용)
     function renderMobileImportCards(rows) {
       const activeEl = document.activeElement;
       if (activeEl && activeEl.tagName === 'INPUT' && activeEl.closest('#mobile-tab-import')) return;
@@ -695,7 +710,6 @@
       lucide.createIcons();
     }
 
-    // 모바일 수출 현황판 렌더링 (편집 중 리렌더링 방지 및 prefix='row' 통일)
     function renderMobileExportCards(rows) {
       const activeEl = document.activeElement;
       if (activeEl && activeEl.tagName === 'INPUT' && activeEl.closest('#mobile-tab-export')) return;
@@ -729,7 +743,6 @@
         const note = row[13] || '-';
         const bkNo = row[14] || '-';
 
-        // 컴퓨터 사이트와 prefix='row' 키 규칙 일치
         const savedWorker = exportStatusMap[`row_${idx}_worker`] !== undefined ? exportStatusMap[`row_${idx}_worker`] : (row[34] || '');
         const savedStatus = exportStatusMap[`row_${idx}_status`] !== undefined ? exportStatusMap[`row_${idx}_status`] : (row[33] || 'NONE');
         const savedSiteIssue = exportStatusMap[`row_${idx}_siteIssue`] !== undefined ? exportStatusMap[`row_${idx}_siteIssue`] : '';
@@ -843,7 +856,6 @@
 
     setInterval(() => {
       const savedUrl = localStorage.getItem('sheetWebAppUrl');
-      // 사진 업로드 중이 아닐 때만 주기적으로 시트 데이터를 동기화합니다.
       if (savedUrl && !isUploadingPhoto) fetchSheetData(savedUrl);
     }, 4000);
 
