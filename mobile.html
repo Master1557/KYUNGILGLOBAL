@@ -14,27 +14,26 @@
       font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
       background-color: #f8fafc;
     }
-    @keyframes bounce-short {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-5px); }
-    }
-    .animate-notification {
-      animation: bounce-short 0.5s ease-in-out infinite;
-    }
   </style>
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800 pb-16">
 
-  <!-- 글로벌 전역 업로드 로딩 오버레이 (여러 사람이 동시에 올릴 때 현재 내 화면 차단 및 상태 안내) -->
+  <!-- 상세 진행률이 표시되는 업로드 로딩 오버레이 -->
   <div id="global-upload-overlay" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm hidden flex flex-col items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-3xl p-6 text-center space-y-3 shadow-2xl max-w-xs w-full">
+    <div class="bg-white rounded-3xl p-6 text-center space-y-4 shadow-2xl max-w-xs w-full">
       <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-      <h3 class="font-black text-slate-900 text-base" id="upload-overlay-title">사진 업로드 중...</h3>
-      <p class="text-xs text-slate-500 font-medium" id="upload-overlay-desc">서버로 사진을 전송하고 있습니다. 잠시만 기다려주세요.</p>
+      <div>
+        <h3 class="font-black text-slate-900 text-base" id="upload-overlay-title">사진 업로드 중...</h3>
+        <p class="text-xs text-blue-600 font-bold mt-1" id="upload-progress-text">0 / 0 장 완료</p>
+      </div>
+      <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+        <div id="upload-progress-bar" class="bg-blue-600 h-full w-0 transition-all duration-300"></div>
+      </div>
+      <p class="text-[11px] text-slate-400">잠시만 기다려주세요.</p>
     </div>
   </div>
 
-  <!-- 알림 권한 요청 및 안내 배너 (최초 접속 시 표시) -->
+  <!-- 알림 권한 요청 및 안내 배너 -->
   <div id="notification-permission-banner" class="bg-blue-600 text-white px-4 py-2.5 text-xs font-bold text-center flex justify-between items-center shadow-inner hidden">
     <span>🔔 현장 알림 및 진동을 받으려면 알림 권한을 허용해주세요!</span>
     <button onclick="requestNotificationPermission()" class="bg-white text-blue-600 px-3 py-1 rounded-lg text-[11px] font-black cursor-pointer shadow">알림 허용하기</button>
@@ -84,7 +83,7 @@
     </button>
   </nav>
 
-  <!-- TAB 1: Operator Dashboard (실시간 접수 현황) -->
+  <!-- TAB 1: Operator Dashboard -->
   <main id="mobile-tab-dashboard" class="max-w-md mx-auto px-3 py-4 space-y-3 block">
     <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center">
       <div>
@@ -96,7 +95,7 @@
 
     <div class="bg-white p-2.5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-2">
       <i data-lucide="search" class="w-4 h-4 text-slate-400 ml-1"></i>
-      <input type="text" id="dashboard-search-input" oninput="renderMobileDashboard(dashboardMap)" placeholder="차량번호, 화주명, 연락처, 비고 검색..." class="w-full text-xs outline-none bg-transparent font-semibold text-slate-700">
+      <input type="text" id="dashboard-search-input" oninput="renderMobileDashboard(dashboardMap)" placeholder="차량번호, 화주명, 연락처 검색..." class="w-full text-xs outline-none bg-transparent font-semibold text-slate-700">
     </div>
 
     <div id="mobile-dashboard-container" class="space-y-3">
@@ -106,7 +105,7 @@
     </div>
   </main>
 
-  <!-- TAB 2: Import Status Board (모바일 수입 현황판) -->
+  <!-- TAB 2: Import Status Board -->
   <main id="mobile-tab-import" class="max-w-md mx-auto px-3 py-4 space-y-3 hidden">
     <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center">
       <div>
@@ -120,7 +119,7 @@
 
     <div class="bg-white p-2.5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-2">
       <i data-lucide="search" class="w-4 h-4 text-slate-400 ml-1"></i>
-      <input type="text" id="import-search-input" oninput="renderMobileImportCards(lastImportRows)" placeholder="CNTR#, 화주, 규격, 비고 검색..." class="w-full text-xs outline-none bg-transparent font-semibold text-slate-700">
+      <input type="text" id="import-search-input" oninput="renderMobileImportCards(lastImportRows)" placeholder="CNTR#, 화주, 규격 검색..." class="w-full text-xs outline-none bg-transparent font-semibold text-slate-700">
     </div>
 
     <div id="mobile-import-container" class="space-y-3">
@@ -130,7 +129,7 @@
     </div>
   </main>
 
-  <!-- TAB 3: Export Status Board (수출 현황판) -->
+  <!-- TAB 3: Export Status Board -->
   <main id="mobile-tab-export" class="max-w-md mx-auto px-3 py-4 space-y-3 hidden">
     <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center">
       <div>
@@ -144,7 +143,7 @@
 
     <div class="bg-white p-2.5 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-2">
       <i data-lucide="search" class="w-4 h-4 text-slate-400 ml-1"></i>
-      <input type="text" id="export-search-input" oninput="renderMobileExportCards(lastSheetRows)" placeholder="CNTR#, 화주, 규격, SEAL, 쇼링 검색..." class="w-full text-xs outline-none bg-transparent font-semibold text-slate-700">
+      <input type="text" id="export-search-input" oninput="renderMobileExportCards(lastSheetRows)" placeholder="CNTR#, 화주, SEAL 검색..." class="w-full text-xs outline-none bg-transparent font-semibold text-slate-700">
     </div>
 
     <div id="mobile-export-container" class="space-y-3">
@@ -420,7 +419,7 @@
       });
     }
 
-    // [개선] 다중 사용자 동시 업로드 대응 및 오버레이 로딩 안내 적용
+    // [개선] 업로드 시 몇 장 중 몇 번째가 전송되고 있는지 실시간 카운트 및 프로그래스바 표시
     async function handleMobilePhotoUpload(event, btnIndex, rowKeyOrIdx, identifier, prefix = 'row') {
       const inputEl = event.target;
       const files = Array.from(inputEl.files);
@@ -429,21 +428,24 @@
       const webAppUrl = document.getElementById('sheet-url-input').value.trim();
       if (!webAppUrl) { alert("환경설정에서 웹 앱 URL을 먼저 입력해주세요."); inputEl.value = ''; return; }
 
-      isUploadingPhoto = true; // 업로드 중 자동 동기화 잠금
+      isUploadingPhoto = true;
 
-      // 글로벌 업로드 로딩창 표시
       const overlay = document.getElementById('global-upload-overlay');
       const overlayTitle = document.getElementById('upload-overlay-title');
-      const overlayDesc = document.getElementById('upload-overlay-desc');
+      const progressText = document.getElementById('upload-progress-text');
+      const progressBar = document.getElementById('upload-progress-bar');
+
       if (overlay) {
-        overlayTitle.innerText = `[사진 ${btnIndex}] ${files.length}장 업로드 중...`;
-        overlayDesc.innerText = `대상: ${identifier}\n여러 작업자가 동시에 처리 중입니다. 잠시만 기다려주세요.`;
+        overlayTitle.innerText = `[사진 ${btnIndex}] 총 ${files.length}장 업로드 중...`;
+        progressText.innerText = `0 / ${files.length} 장 완료 (0%)`;
+        progressBar.style.width = '0%';
         overlay.classList.remove('hidden');
       }
 
       try {
-        // 병렬 업로드로 처리 속도 향상 및 오류 방지
-        const uploadPromises = files.map(async (file, i) => {
+        const newUploadedUrls = [];
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
           const fileName = `${prefix}_${identifier}_${Date.now()}_${i + 1}_${file.name}`;
           const base64Data = await resizeImage(file, 900, 0.6);
 
@@ -455,13 +457,20 @@
 
           const response = await fetch(webAppUrl, { method: 'POST', body: formData });
           const result = await response.json();
-          if (result.status === 'success') return result.url;
-          else throw new Error(result.message || '업로드 에러');
-        });
+          
+          if (result.status === 'success') {
+            newUploadedUrls.push(result.url);
+          } else {
+            throw new Error(result.message || '업로드 에러');
+          }
 
-        const newUploadedUrls = await Promise.all(uploadPromises);
+          // 실시간 진행 상황 업데이트
+          const currentCount = i + 1;
+          const percent = Math.round((currentCount / files.length) * 100);
+          if (progressText) progressText.innerText = `${currentCount} / ${files.length} 장 완료 (${percent}%)`;
+          if (progressBar) progressBar.style.width = `${percent}%`;
+        }
 
-        // Firebase에 안전하게 데이터 합산 저장
         const dbKey = `${prefix}_${rowKeyOrIdx}_photo_${btnIndex}`;
         const snapshot = await exportPhotosRef.child(dbKey).once('value');
         const currentData = snapshot.val() || {};
@@ -471,13 +480,13 @@
         await exportPhotosRef.child(dbKey).set({ urls: combinedUrls, identifier: identifier });
         
         if (overlay) overlay.classList.add('hidden');
-        alert(`사진 ${newUploadedUrls.length}장이 성공적으로 업로드되었습니다!`);
+        alert(`사진 ${newUploadedUrls.length장이 성공적으로 업로드되었습니다!`);
 
       } catch (error) {
         if (overlay) overlay.classList.add('hidden');
         alert("업로드 실패: " + error.message);
       } finally {
-        isUploadingPhoto = false; // 업로드 해제
+        isUploadingPhoto = false;
         inputEl.value = '';
       }
     }
