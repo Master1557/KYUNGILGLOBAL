@@ -25,7 +25,7 @@
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800 pb-16">
 
-  <!-- [개선] 화면을 가리지 않고 투명도와 블러가 적용된 실시간 업로드 진척도 플로팅 배너 (우측 하단 고정) -->
+  <!-- 업로드 진척도 플로팅 배너 (투명도 적용) -->
   <div id="global-upload-overlay" class="fixed bottom-6 right-4 left-4 max-w-sm mx-auto bg-slate-900/90 backdrop-blur-md text-white p-4 rounded-2xl shadow-2xl z-50 hidden border border-slate-700/80 space-y-2">
     <div class="flex justify-between items-center">
       <div class="flex items-center gap-2">
@@ -40,7 +40,7 @@
     <p class="text-[10px] text-slate-400 text-center">업로드 중에도 다른 화면을 자유롭게 조회/수정할 수 있습니다.</p>
   </div>
 
-  <!-- 알림 권한 요청 및 안내 배너 (최초 접속 시 표시) -->
+  <!-- 알림 권한 요청 및 안내 배너 -->
   <div id="notification-permission-banner" class="bg-blue-600 text-white px-4 py-2.5 text-xs font-bold text-center flex justify-between items-center shadow-inner hidden">
     <span>🔔 현장 알림 및 진동을 받으려면 알림 권한을 허용해주세요!</span>
     <button onclick="requestNotificationPermission()" class="bg-white text-blue-600 px-3 py-1 rounded-lg text-[11px] font-black cursor-pointer shadow">알림 허용하기</button>
@@ -426,7 +426,6 @@
       });
     }
 
-    // [개선] 화면을 가리지 않는 하단 반투명 플로팅 배너로 진척도 표시 및 백그라운드 업로드 수행
     async function handleMobilePhotoUpload(event, btnIndex, rowKeyOrIdx, identifier, prefix = 'row') {
       const inputEl = event.target;
       const files = Array.from(inputEl.files);
@@ -497,12 +496,14 @@
       }
     }
 
+    // [수정] 검색 중 입력 중이더라도 텍스트 포커스가 풀리지 않고 즉시 필터링되도록 개선
     function renderMobileDashboard(data) {
-      const activeEl = document.activeElement;
-      if (activeEl && activeEl.tagName === 'INPUT' && activeEl.closest('#mobile-tab-dashboard')) return;
-
       const container = document.getElementById('mobile-dashboard-container');
       if (!container) return;
+
+      const searchInput = document.getElementById('dashboard-search-input');
+      const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
       container.innerHTML = '';
 
       const keys = Object.keys(data);
@@ -510,9 +511,6 @@
       keys.forEach(k => { if (data[k].status === 'WAITING') waitingCount++; });
       document.getElementById('mobile-count-waiting').innerText = waitingCount;
       document.getElementById('mobile-nav-badge').innerText = waitingCount;
-
-      const searchInput = document.getElementById('dashboard-search-input');
-      const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
 
       const filteredKeys = keys.filter(key => {
         if (!keyword) return true;
@@ -605,16 +603,15 @@
       lucide.createIcons();
     }
 
+    // [수정] 수입 현황판 검색 기능 활성화 및 실시간 필터링
     function renderMobileImportCards(rows) {
-      const activeEl = document.activeElement;
-      if (activeEl && activeEl.tagName === 'INPUT' && activeEl.closest('#mobile-tab-import')) return;
-
       const container = document.getElementById('mobile-import-container');
       if (!container) return;
-      container.innerHTML = '';
 
       const searchInput = document.getElementById('import-search-input');
       const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+      container.innerHTML = '';
 
       const filteredRows = rows.map((row, idx) => ({ row, idx })).filter(({ row }) => {
         if (!keyword) return true;
@@ -725,16 +722,15 @@
       lucide.createIcons();
     }
 
+    // [수정] 수출 현황판 검색 기능 활성화 및 실시간 필터링
     function renderMobileExportCards(rows) {
-      const activeEl = document.activeElement;
-      if (activeEl && activeEl.tagName === 'INPUT' && activeEl.closest('#mobile-tab-export')) return;
-
       const container = document.getElementById('mobile-export-container');
       if (!container) return;
-      container.innerHTML = '';
 
       const searchInput = document.getElementById('export-search-input');
       const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+      container.innerHTML = '';
 
       const filteredRows = rows.map((row, idx) => ({ row, idx })).filter(({ row }) => {
         if (!keyword) return true;
@@ -879,7 +875,7 @@
       switchMobileTab(lastTab);
 
       if ('Notification' in window && Notification.permission === 'default') {
-        document.getElementById('notification-permission-banner').classList.add('hidden');
+        document.getElementById('notification-permission-banner').classList.remove('hidden');
       }
 
       const savedUrl = localStorage.getItem('sheetWebAppUrl');
