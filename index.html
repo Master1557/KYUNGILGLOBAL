@@ -436,13 +436,13 @@
               <label class="cursor-pointer bg-blue-600 hover:bg-blue-500 text-white text-xs px-2.5 py-1.5 rounded font-medium shadow-sm">사진 1<input type="file" accept="image/*" multiple class="hidden" onchange="handleDashboardPhotoUpload(event, 1, '${key}', '${item.carNumber}')"></label>
               <label class="cursor-pointer bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-2.5 py-1.5 rounded font-medium shadow-sm">사진 2<input type="file" accept="image/*" multiple class="hidden" onchange="handleDashboardPhotoUpload(event, 2, '${key}', '${item.carNumber}')"></label>
             </div>
-            <div class="flex gap-1 items-center">
+            <div class="flex gap-1 items-center flex-wrap">
               ${p1Data && p1Data.urls && p1Data.urls.length > 0 ? `
-                <button onclick='showPhotoModal(${JSON.stringify(p1Data.urls)}, "${item.carNumber} - 사진 1")' class="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] px-2 py-0.5 rounded cursor-pointer">사진1(${p1Data.urls.length})</button>
+                <button onclick='showPhotoModal(${JSON.stringify(p1Data.urls)}, "${item.carNumber} - 사진 1")' class="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] px-2 py-0.5 rounded cursor-pointer font-bold">사진1(${p1Data.urls.length})</button>
                 <button onclick="deletePhotoData('dash_${key}_photo_1')" class="text-red-500 hover:text-red-700 text-xs font-bold px-1" title="사진1 삭제">🗑️</button>
               ` : ''}
               ${p2Data && p2Data.urls && p2Data.urls.length > 0 ? `
-                <button onclick='showPhotoModal(${JSON.stringify(p2Data.urls)}, "${item.carNumber} - 사진 2")' class="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] px-2 py-0.5 rounded cursor-pointer">사진2(${p2Data.urls.length})</button>
+                <button onclick='showPhotoModal(${JSON.stringify(p2Data.urls)}, "${item.carNumber} - 사진 2")' class="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] px-2 py-0.5 rounded cursor-pointer font-bold">사진2(${p2Data.urls.length})</button>
                 <button onclick="deletePhotoData('dash_${key}_photo_2')" class="text-red-500 hover:text-red-700 text-xs font-bold px-1" title="사진2 삭제">🗑️</button>
               ` : ''}
             </div>
@@ -697,12 +697,7 @@
         const newUploadedUrls = await Promise.all(uploadPromises);
         if (loadingBox) loadingBox.remove();
 
-        let rowIndex = 0;
-        if (row && row.parentNode) {
-          rowIndex = Array.from(row.parentNode.children).indexOf(row);
-        }
-
-        const dbKey = `${prefix}_${rowIndex}_photo_${btnIndex}`;
+        const dbKey = `${prefix}_photo_${btnIndex}`;
         let existingUrls = (exportPhotosMap[dbKey] && exportPhotosMap[dbKey].urls) ? exportPhotosMap[dbKey].urls : [];
         let combinedUrls = existingUrls.concat(newUploadedUrls);
 
@@ -885,7 +880,6 @@
       }
     }
 
-    // --- 수입 현황판 렌더링 함수 (수출 현황판과 동일하게 사진 UI 및 보기/삭제 기능 추가 완료) ---
     function renderImportTable(rows) {
       const tbody = document.getElementById('import-table-body');
       if (!tbody) return;
@@ -919,9 +913,10 @@
         const detentionFormatted = formatDateString(row[11]);
         const savedSiteIssue = exportStatusMap[`import_${idx}_siteIssue`] !== undefined ? exportStatusMap[`import_${idx}_siteIssue`] : '';
         
-        // 수입 사진 데이터 및 식별자 바인딩
-        const p1Data = exportPhotosMap[`import_${idx}_photo_1`];
-        const p2Data = exportPhotosMap[`import_${idx}_photo_2`];
+        const photoKey1 = `import_${idx}_photo_1`;
+        const photoKey2 = `import_${idx}_photo_2`;
+        const p1Data = exportPhotosMap[photoKey1];
+        const p2Data = exportPhotosMap[photoKey2];
         let identifier = (cntrVal || '사진').toString().trim();
 
         const isMergedSpecialRow = (!cntrVal && (specVal || shipperVal || noteVal));
@@ -990,8 +985,8 @@
                     <div class="bg-emerald-50 px-2 py-1 rounded border border-emerald-300 font-bold text-emerald-700 flex justify-between items-center">
                       <span>[사진1] ${p1Data.urls.length}장</span>
                       <div class="flex gap-1">
-                        <button onclick='showPhotoModal(${JSON.stringify(p1Data.urls)}, "${identifier} - 사진 1")' class="bg-emerald-600 text-white px-1.5 py-0.5 rounded cursor-pointer">보기</button>
-                        <button onclick="deletePhotoData('import_${idx}_photo_1')" class="text-red-500 hover:text-red-700 font-bold px-1" title="사진1 삭제">🗑️</button>
+                        <button onclick='showPhotoModal(${JSON.stringify(p1Data.urls)}, "${identifier} - 사진 1")' class="bg-emerald-600 text-white px-1.5 py-0.5 rounded cursor-pointer font-bold">보기</button>
+                        <button onclick="deletePhotoData('${photoKey1}')" class="text-red-500 hover:text-red-700 font-bold px-1" title="사진1 삭제">🗑️</button>
                       </div>
                     </div>
                   ` : ''}
@@ -999,8 +994,8 @@
                     <div class="bg-emerald-50 px-2 py-1 rounded border border-emerald-300 font-bold text-emerald-700 flex justify-between items-center">
                       <span>[사진2] ${p2Data.urls.length}장</span>
                       <div class="flex gap-1">
-                        <button onclick='showPhotoModal(${JSON.stringify(p2Data.urls)}, "${identifier} - 사진 2")' class="bg-emerald-600 text-white px-1.5 py-0.5 rounded cursor-pointer">보기</button>
-                        <button onclick="deletePhotoData('import_${idx}_photo_2')" class="text-red-500 hover:text-red-700 font-bold px-1" title="사진2 삭제">🗑️</button>
+                        <button onclick='showPhotoModal(${JSON.stringify(p2Data.urls)}, "${identifier} - 사진 2")' class="bg-emerald-600 text-white px-1.5 py-0.5 rounded cursor-pointer font-bold">보기</button>
+                        <button onclick="deletePhotoData('${photoKey2}')" class="text-red-500 hover:text-red-700 font-bold px-1" title="사진2 삭제">🗑️</button>
                       </div>
                     </div>
                   ` : ''}
@@ -1080,8 +1075,11 @@
 
         const clsFormatted = formatDateString(row[11]);
         const savedSiteIssue = exportStatusMap[`row_${idx}_siteIssue`] !== undefined ? exportStatusMap[`row_${idx}_siteIssue`] : '';
-        const p1Data = exportPhotosMap[`row_${idx}_photo_1`];
-        const p2Data = exportPhotosMap[`row_${idx}_photo_2`];
+        
+        const photoKey1 = `row_${idx}_photo_1`;
+        const photoKey2 = `row_${idx}_photo_2`;
+        const p1Data = exportPhotosMap[photoKey1];
+        const p2Data = exportPhotosMap[photoKey2];
         let identifier = (row[2] || '사진').toString().trim();
 
         tr.innerHTML = `
@@ -1128,8 +1126,8 @@
                     <div class="bg-emerald-50 px-2 py-1 rounded border border-emerald-300 font-bold text-emerald-700 flex justify-between items-center">
                       <span>[사진1] ${p1Data.urls.length}장</span>
                       <div class="flex gap-1">
-                        <button onclick='showPhotoModal(${JSON.stringify(p1Data.urls)}, "${identifier} - 사진 1")' class="bg-emerald-600 text-white px-1.5 py-0.5 rounded cursor-pointer">보기</button>
-                        <button onclick="deletePhotoData('row_${idx}_photo_1')" class="text-red-500 hover:text-red-700 font-bold px-1" title="사진1 삭제">🗑️</button>
+                        <button onclick='showPhotoModal(${JSON.stringify(p1Data.urls)}, "${identifier} - 사진 1")' class="bg-emerald-600 text-white px-1.5 py-0.5 rounded cursor-pointer font-bold">보기</button>
+                        <button onclick="deletePhotoData('${photoKey1}')" class="text-red-500 hover:text-red-700 font-bold px-1" title="사진1 삭제">🗑️</button>
                       </div>
                     </div>
                   ` : ''}
@@ -1137,8 +1135,8 @@
                     <div class="bg-emerald-50 px-2 py-1 rounded border border-emerald-300 font-bold text-emerald-700 flex justify-between items-center">
                       <span>[사진2] ${p2Data.urls.length}장</span>
                       <div class="flex gap-1">
-                        <button onclick='showPhotoModal(${JSON.stringify(p2Data.urls)}, "${identifier} - 사진 2")' class="bg-emerald-600 text-white px-1.5 py-0.5 rounded cursor-pointer">보기</button>
-                        <button onclick="deletePhotoData('row_${idx}_photo_2')" class="text-red-500 hover:text-red-700 font-bold px-1" title="사진2 삭제">🗑️</button>
+                        <button onclick='showPhotoModal(${JSON.stringify(p2Data.urls)}, "${identifier} - 사진 2")' class="bg-emerald-600 text-white px-1.5 py-0.5 rounded cursor-pointer font-bold">보기</button>
+                        <button onclick="deletePhotoData('${photoKey2}')" class="text-red-500 hover:text-red-700 font-bold px-1" title="사진2 삭제">🗑️</button>
                       </div>
                     </div>
                   ` : ''}
