@@ -25,6 +25,21 @@
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800 pb-16">
 
+  <!-- 실시간 진척도 및 프로그래스바가 표시되는 업로드 로딩 오버레이 -->
+  <div id="global-upload-overlay" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm hidden flex flex-col items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-3xl p-6 text-center space-y-4 shadow-2xl max-w-xs w-full">
+      <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+      <div>
+        <h3 class="font-black text-slate-900 text-base" id="upload-overlay-title">사진 업로드 중...</h3>
+        <p class="text-xs text-blue-600 font-bold mt-1" id="upload-progress-text">0 / 0 장 완료 (0%)</p>
+      </div>
+      <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden border border-slate-200">
+        <div id="upload-progress-bar" class="bg-blue-600 h-full w-0 transition-all duration-300"></div>
+      </div>
+      <p class="text-[11px] text-slate-400">여러 작업자가 동시에 처리 중입니다.<br>잠시만 기다려주세요.</p>
+    </div>
+  </div>
+
   <!-- 알림 권한 요청 및 안내 배너 (최초 접속 시 표시) -->
   <div id="notification-permission-banner" class="bg-blue-600 text-white px-4 py-2.5 text-xs font-bold text-center flex justify-between items-center shadow-inner hidden">
     <span>🔔 현장 알림 및 진동을 받으려면 알림 권한을 허용해주세요!</span>
@@ -205,7 +220,7 @@
     let lastSheetRows = [];
     let lastRawDataString = "";
     let isInitialDashboardLoad = true;
-    let isUploadingPhoto = false; // 사진 업로드 중 동기화 차단 플래그
+    let isUploadingPhoto = false;
 
     const workerList = ["조인효", "윤동현", "이예성", "김찬양", "황정환", "민태경", "김지홍"];
 
@@ -325,12 +340,10 @@
       renderMobileDashboard(dashboardMap);
     }
 
-    // 컴퓨터 사이트와 키 규칙(import_idx_field, row_idx_field)을 완벽하게 통일
     async function updateExportStatusOrWorker(element, colIndex, fieldName, rowIndex, prefix = 'row') {
       const webAppUrl = document.getElementById('sheet-url-input').value.trim();
       const value = element.value;
       
-      // 파이어베이스 저장 경로를 컴퓨터 사이트와 정확히 일치시킴
       exportStatusRef.child(`${prefix}_${rowIndex}_${fieldName}`).set(value);
 
       if (webAppUrl) {
@@ -413,6 +426,7 @@
       });
     }
 
+    // [개선] 사진 업로드 시 실시간 진척도(퍼센트 및 몇 번째 전송 중인지) 확인 기능 추가
     async function handleMobilePhotoUpload(event, btnIndex, rowKeyOrIdx, identifier, prefix = 'row') {
       const inputEl = event.target;
       const files = Array.from(inputEl.files);
@@ -421,19 +435,24 @@
       const webAppUrl = document.getElementById('sheet-url-input').value.trim();
       if (!webAppUrl) { alert("환경설정에서 웹 앱 URL을 먼저 입력해주세요."); inputEl.value = ''; return; }
 
-      isUploadingPhoto = true; // 업로드 중 자동 동기화 차단
+      isUploadingPhoto = true;
 
-      const card = inputEl.closest('.bg-white');
-      let loadingBox = null;
-      if (card) {
-        loadingBox = document.createElement('div');
-        loadingBox.className = "flex items-center gap-1.5 font-bold text-amber-800 bg-amber-100 px-3 py-2 rounded-xl border border-amber-300 text-xs mt-2";
-        loadingBox.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span> [사진 ${btnIndex}] ${files.length}장 업로드 중...`;
-        card.appendChild(loadingBox);
+      const overlay = document.getElementById('global-upload-overlay');
+      const overlayTitle = document.getElementById('upload-overlay-title');
+      const progressText = document.getElementById('upload-progress-text');
+      const progressBar = document.getElementById('upload-progress-bar');
+
+      if (overlay) {
+        overlayTitle.innerText = `[사진 ${btnIndex}] 총 ${files.length}장 업로드 중...`;
+        progressText.innerText = `0 / ${files.length} 장 완료 (0%)`;
+        progressBar.style.width = '0%';
+        overlay.classList.remove('hidden');
       }
 
       try {
-        const uploadPromises = files.map(async (file, i) => {
+        const newUploadedUrls = [];
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
           const fileName = `${prefix}_${identifier}_${Date.now()}_${i + 1}_${file.name}`;
           const base64Data = await resizeImage(file, 900, 0.6);
 
@@ -445,25 +464,38 @@
 
           const response = await fetch(webAppUrl, { method: 'POST', body: formData });
           const result = await response.json();
-          if (result.status === 'success') return result.url;
-          else throw new Error(result.message || '업로드 에러');
-        });
+          
+          if (result.status === 'success') {
+            newUploadedUrls.push(result.url);
+          } else {
+            throw new Error(result.message || '업로드 에러');
+          }
 
-        const newUploadedUrls = await Promise.all(uploadPromises);
-        if (loadingBox) loadingBox.remove();
+          // 실시간 진척도 업데이트 반영
+          const currentCount = i + 1;
+          const percent = Math.round((currentCount / files.length) * 100);
+          if (progressText) progressText.innerText = `${currentCount} / ${files.length} 장 완료 (${percent}%)`;
+          if (progressBar) progressBar.style.width = `${percent}%`;
+        }
 
         const dbKey = `${prefix}_${rowKeyOrIdx}_photo_${btnIndex}`;
-        let existingUrls = (exportPhotosMap[dbKey] && exportPhotosMap[dbKey].urls) ? exportPhotosMap[dbKey].urls : [];
+        const snapshot = await exportPhotosRef.child(dbKey).once('value');
+        const currentData = snapshot.val() || {};
+        let existingUrls = Array.isArray(currentData.urls) ? currentData.urls : [];
         let combinedUrls = existingUrls.concat(newUploadedUrls);
 
         await exportPhotosRef.child(dbKey).set({ urls: combinedUrls, identifier: identifier });
+        
+        if (overlay) overlay.classList.add('hidden');
+        alert(`사진 ${newUploadedUrls.length}장이 성공적으로 업로드되었습니다!`);
+
       } catch (error) {
-        if (loadingBox) loadingBox.remove();
+        if (overlay) overlay.classList.add('hidden');
         alert("업로드 실패: " + error.message);
       } finally {
-        isUploadingPhoto = false; // 업로드 완료 후 동기화 재개
+        isUploadingPhoto = false;
+        inputEl.value = '';
       }
-      inputEl.value = '';
     }
 
     function renderMobileDashboard(data) {
@@ -574,7 +606,6 @@
       lucide.createIcons();
     }
 
-    // 모바일 수입 현황판 렌더링 (편집 중 리렌더링 방지 적용)
     function renderMobileImportCards(rows) {
       const activeEl = document.activeElement;
       if (activeEl && activeEl.tagName === 'INPUT' && activeEl.closest('#mobile-tab-import')) return;
@@ -695,7 +726,6 @@
       lucide.createIcons();
     }
 
-    // 모바일 수출 현황판 렌더링 (편집 중 리렌더링 방지 및 prefix='row' 통일)
     function renderMobileExportCards(rows) {
       const activeEl = document.activeElement;
       if (activeEl && activeEl.tagName === 'INPUT' && activeEl.closest('#mobile-tab-export')) return;
@@ -729,7 +759,6 @@
         const note = row[13] || '-';
         const bkNo = row[14] || '-';
 
-        // 컴퓨터 사이트와 prefix='row' 키 규칙 일치
         const savedWorker = exportStatusMap[`row_${idx}_worker`] !== undefined ? exportStatusMap[`row_${idx}_worker`] : (row[34] || '');
         const savedStatus = exportStatusMap[`row_${idx}_status`] !== undefined ? exportStatusMap[`row_${idx}_status`] : (row[33] || 'NONE');
         const savedSiteIssue = exportStatusMap[`row_${idx}_siteIssue`] !== undefined ? exportStatusMap[`row_${idx}_siteIssue`] : '';
@@ -843,7 +872,6 @@
 
     setInterval(() => {
       const savedUrl = localStorage.getItem('sheetWebAppUrl');
-      // 사진 업로드 중이 아닐 때만 주기적으로 시트 데이터를 동기화합니다.
       if (savedUrl && !isUploadingPhoto) fetchSheetData(savedUrl);
     }, 4000);
 
