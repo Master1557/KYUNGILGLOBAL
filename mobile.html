@@ -496,7 +496,7 @@
       }
     }
 
-    // [수정] 검색 중 입력 중이더라도 텍스트 포커스가 풀리지 않고 즉시 필터링되도록 개선
+    // [수정 완료] 대시보드 검색 필터링 로직 복구
     function renderMobileDashboard(data) {
       const container = document.getElementById('mobile-dashboard-container');
       if (!container) return;
@@ -603,7 +603,7 @@
       lucide.createIcons();
     }
 
-    // [수정] 수입 현황판 검색 기능 활성화 및 실시간 필터링
+    // [수정 완료] 수입 현황판 검색 필터링 로직 복구
     function renderMobileImportCards(rows) {
       const container = document.getElementById('mobile-import-container');
       if (!container) return;
@@ -722,7 +722,7 @@
       lucide.createIcons();
     }
 
-    // [수정] 수출 현황판 검색 기능 활성화 및 실시간 필터링
+    // [수정 완료] 수출 현황판 검색 필터링 로직 복구
     function renderMobileExportCards(rows) {
       const container = document.getElementById('mobile-export-container');
       if (!container) return;
