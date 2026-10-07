@@ -454,8 +454,8 @@
           <td class="py-3.5 px-4 text-center nowrap-cell">${typeStyle}</td>
           <td class="py-3.5 px-4 text-slate-500 nowrap-cell">${item.timeStr || '-'}</td>
           <td class="py-3.5 px-4 min-w-[150px]"><input type="text" value="${item.manager || ''}" onchange="updateFirebaseField('${key}', 'manager', this.value)" class="w-full bg-slate-50 border rounded px-2.5 py-1.5 text-xs font-bold"></td>
-          <td class="py-3.5 px-4 font-bold min-w-[130px] nowrap-cell">${item.carNumber || ''}</td>
-          <td class="py-3.5 px-4 text-slate-500 min-w-[140px] nowrap-cell">${item.phoneNumber || ''}</td>
+          <td class="py-3.5 px-4 min-w-[130px] nowrap-cell"><input type="text" value="${item.carNumber || ''}" onchange="updateFirebaseField('${key}', 'carNumber', this.value)" class="w-full border rounded px-2.5 py-1.5 text-xs font-bold"></td>
+          <td class="py-3.5 px-4 min-w-[140px] nowrap-cell"><input type="text" value="${item.phoneNumber || ''}" onchange="updateFirebaseField('${key}', 'phoneNumber', this.value)" class="w-full border rounded px-2.5 py-1.5 text-xs"></td>
           <td class="py-3.5 px-4 min-w-[180px]"><input type="text" value="${item.clientName || ''}" onchange="updateFirebaseField('${key}', 'clientName', this.value)" class="w-full border rounded px-2.5 py-1.5 text-xs"></td>
           <td class="py-3.5 px-4 text-center min-w-[90px]"><input type="number" value="${item.quantity || 0}" min="1" onchange="updateFirebaseField('${key}', 'quantity', this.value)" class="w-full text-center border rounded px-2 py-1 text-xs font-bold text-blue-600"></td>
           <td class="py-3.5 px-4 min-w-[220px]"><input type="text" value="${item.note || ''}" onchange="updateFirebaseField('${key}', 'note', this.value)" class="w-full bg-slate-50 border rounded px-2.5 py-1.5 text-xs"></td>
@@ -880,7 +880,6 @@
       }
     }
 
-    // --- 수입 현황판 렌더링 (모든 행에 사진 칸 보장 및 병합 행 처리 개선) ---
     function renderImportTable(rows) {
       const tbody = document.getElementById('import-table-body');
       if (!tbody) return;
@@ -1068,7 +1067,6 @@
       return null;
     }
 
-    // --- 수출 현황판 렌더링 (모든 행에 사진 칸 보장) ---
     function renderExportTable(rows) {
       const tbody = document.getElementById('export-table-body');
       if (!tbody) return;
